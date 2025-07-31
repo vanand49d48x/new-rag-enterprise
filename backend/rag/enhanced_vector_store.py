@@ -46,15 +46,25 @@ class EnterpriseVectorStore:
     
     def _ensure_collection_exists(self):
         """Create collection with proper configuration"""
-        if not self.client.collection_exists(self.collection_name):
-            self.client.recreate_collection(
-                collection_name=self.collection_name,
-                vectors_config=VectorParams(
-                    size=self.vector_size, 
-                    distance=Distance.COSINE
+        try:
+            # Check if collection exists by trying to get its info
+            self.client.get_collection(self.collection_name)
+            logger.info(f"Collection {self.collection_name} already exists")
+        except Exception as e:
+            # Collection doesn't exist or other error, try to create it
+            try:
+                self.client.create_collection(
+                    collection_name=self.collection_name,
+                    vectors_config=VectorParams(
+                        size=self.vector_size, 
+                        distance=Distance.COSINE
+                    )
                 )
-            )
-            logger.info(f"Created collection: {self.collection_name}")
+                logger.info(f"Created collection: {self.collection_name}")
+            except Exception as create_error:
+                # If creation fails (e.g., collection already exists), that's fine
+                logger.info(f"Collection {self.collection_name} already exists or creation failed: {create_error}")
+                pass
     
     def index_chunks(self, chunks: List[Dict[str, Any]]):
         """
