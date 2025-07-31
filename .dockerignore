@@ -1,0 +1,32 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.DS_Store
+.env
+
+# Exclude large model files
+models/
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Exclude logs and temporary files
+logs/
+*.log
+tmp/
+temp/
+
+# Exclude git and IDE files
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Exclude OS files
+.DS_Store
+Thumbs.db
