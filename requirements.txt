@@ -30,6 +30,17 @@ nltk==3.8.1
 spacy==3.7.2
 sentence-transformers==2.2.2
 
+# Web scraping and HTML processing
+beautifulsoup4==4.12.2
+lxml==6.0.0
+
+# Image processing
+Pillow==11.3.0
+opencv-python==4.8.1.78
+
+# Audio processing
+librosa==0.10.1
+
 # Monitoring and logging
 prometheus-client==0.19.0
 structlog==23.2.0
