@@ -1,0 +1,60 @@
+MEDICAL MEDICATIONS REFERENCE
+
+DIABETES MEDICATIONS
+Metformin
+- Dosage: 500-2550mg daily in divided doses
+- Side Effects: Nausea, diarrhea, abdominal discomfort, lactic acidosis (rare)
+- Interactions: Alcohol, iodinated contrast media, certain antibiotics
+- Monitoring: Kidney function, vitamin B12 levels
+
+Insulin
+- Types: Rapid-acting, short-acting, intermediate-acting, long-acting
+- Administration: Subcutaneous injection, insulin pump
+- Side Effects: Hypoglycemia, weight gain, injection site reactions
+- Monitoring: Blood glucose levels, HbA1c
+
+HYPERTENSION MEDICATIONS
+ACE Inhibitors (Lisinopril, Enalapril)
+- Dosage: 5-40mg daily
+- Side Effects: Dry cough, dizziness, hyperkalemia, angioedema
+- Interactions: NSAIDs, potassium supplements, lithium
+- Monitoring: Blood pressure, kidney function, potassium levels
+
+Calcium Channel Blockers (Amlodipine, Diltiazem)
+- Dosage: 2.5-10mg daily
+- Side Effects: Edema, dizziness, flushing, constipation
+- Interactions: Grapefruit juice, beta-blockers, digoxin
+- Monitoring: Blood pressure, heart rate, liver function
+
+ASTHMA MEDICATIONS
+Inhaled Corticosteroids (Fluticasone, Budesonide)
+- Dosage: 100-1000mcg daily
+- Side Effects: Oral thrush, hoarseness, growth suppression in children
+- Interactions: Minimal systemic interactions
+- Monitoring: Lung function, growth in children
+
+Short-acting Beta Agonists (Albuterol)
+- Dosage: 2 puffs every 4-6 hours as needed
+- Side Effects: Tremor, tachycardia, nervousness, headache
+- Interactions: Beta-blockers, diuretics
+- Monitoring: Heart rate, blood pressure, symptom control
+
+DEPRESSION MEDICATIONS
+SSRIs (Fluoxetine, Sertraline, Escitalopram)
+- Dosage: 10-80mg daily
+- Side Effects: Nausea, sexual dysfunction, insomnia, weight changes
+- Interactions: MAOIs, NSAIDs, warfarin, other antidepressants
+- Monitoring: Mood, suicidal thoughts, liver function
+
+SNRIs (Venlafaxine, Duloxetine)
+- Dosage: 37.5-225mg daily
+- Side Effects: Nausea, dizziness, sweating, blood pressure changes
+- Interactions: MAOIs, alcohol, other antidepressants
+- Monitoring: Blood pressure, liver function, mood changes
+
+GENERAL MEDICATION PRINCIPLES
+- Start Low, Go Slow: Begin with lowest effective dose
+- Monitor Regularly: Regular assessment of effectiveness and side effects
+- Patient Education: Clear instructions on administration and monitoring
+- Drug Interactions: Comprehensive review of all medications
+- Adherence Support: Strategies to improve medication compliance 

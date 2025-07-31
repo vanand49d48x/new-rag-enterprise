@@ -1,0 +1,68 @@
+# Fast RAG System Configuration
+# Optimized for speed and responsiveness
+
+# Model Configuration - Using smaller, faster model
+model:
+  name: "tinyllama"  # Much faster than qwen2-7b
+  # Model-specific settings optimized for speed
+  tinyllama:
+    filename: "tinyllama-1.1b-chat-v0.3.Q4_K_M.gguf"
+    context_size: 1024
+    threads: 16  # More threads for faster processing
+    batch_size: 512
+    max_tokens: 128
+  qwen2.5-3b:
+    filename: "qwen2.5-3b-instruct-q4_k_m.gguf"
+    context_size: 2048
+    threads: 16
+    batch_size: 512
+    max_tokens: 128
+  qwen2-7b:
+    filename: "qwen2-7b-instruct-q4_k_m.gguf"
+    context_size: 2048
+    threads: 16
+    batch_size: 512
+    max_tokens: 128
+
+# API Configuration - Faster timeouts
+api:
+  host: "0.0.0.0"
+  port: 8000
+  timeout: 60  # Reduced from 180 to 60 seconds
+  max_file_size: 100
+
+# Vector Store Configuration - Optimized
+vector_store:
+  host: "qdrant"
+  port: 6334
+  collection_name: "enterprise_docs"
+  vector_size: 384
+
+# LLM Configuration - Optimized for speed
+llm:
+  backend: "llama_cpp"
+  api_url: "http://llama-cpp:8080/completion"
+  temperature: 0.5  # Lower temperature for faster, more focused responses
+  top_p: 0.8  # Reduced for faster generation
+  top_k: 20  # Reduced for faster generation
+  repeat_penalty: 1.05  # Reduced penalty for speed
+
+# Processing Configuration - Optimized for speed
+processing:
+  chunk_size: 300  # Smaller chunks for faster processing
+  chunk_overlap: 30  # Reduced overlap
+  max_workers: 8  # More workers for parallel processing
+
+# Monitoring Configuration
+monitoring:
+  prometheus_port: 9090
+  grafana_port: 3000
+  grafana_password: "admin"
+
+# Deployment Configuration
+deployment:
+  platform: "auto"
+  restart_policy: "unless-stopped"
+  health_check_interval: 30
+  health_check_timeout: 10
+  health_check_retries: 3 

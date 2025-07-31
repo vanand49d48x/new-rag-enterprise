@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise RAG - Documentation</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1a1a1a;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .header {
+            background: white;
+            color: #1a1a1a;
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 32px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .header-icon {
+            font-size: 3em;
+            color: #8b5cf6;
+            margin-bottom: 16px;
+        }
+        
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            color: #64748b;
+            margin-bottom: 24px;
+            font-weight: 400;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            padding: 12px 24px;
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .nav-btn:hover {
+            background: #7c3aed;
+            transform: translateY(-2px);
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 32px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            background: #f8fafc;
+            padding: 32px 24px;
+            border-right: 1px solid #e2e8f0;
+        }
+        
+        .sidebar h3 {
+            color: #1a1a1a;
+            font-size: 1.2em;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        
+        .nav-menu {
+            list-style: none;
+        }
+        
+        .nav-menu li {
+            margin-bottom: 8px;
+        }
+        
+        .nav-menu a {
+            display: block;
+            padding: 12px 16px;
+            color: #64748b;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            background: #8b5cf6;
+            color: white;
+        }
+        
+        .main-content {
+            padding: 32px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .section {
+            margin-bottom: 48px;
+        }
+        
+        .section h2 {
+            color: #1a1a1a;
+            font-size: 2em;
+            margin-bottom: 16px;
+            font-weight: 700;
+            border-bottom: 3px solid #8b5cf6;
+            padding-bottom: 8px;
+        }
+        
+        .section h3 {
+            color: #1a1a1a;
+            font-size: 1.5em;
+            margin: 24px 0 12px 0;
+            font-weight: 600;
+        }
+        
+        .section p {
+            color: #4a5568;
+            margin-bottom: 16px;
+            font-size: 1.1em;
+        }
+        
+        .code-block {
+            background: #1a1a1a;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 16px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        
+        .info-box {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+        
+        .info-box h4 {
+            color: #1e40af;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .warning-box {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+        
+        .warning-box h4 {
+            color: #92400e;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .success-box {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+        
+        .success-box h4 {
+            color: #065f46;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin: 24px 0;
+        }
+        
+        .feature-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        
+        .feature-card h4 {
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .feature-card p {
+            color: #64748b;
+            font-size: 0.95em;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .table th,
+        .table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        
+        .table tr:hover {
+            background: #f8fafc;
+        }
+        
+        .step-list {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+        
+        .step-list li {
+            counter-increment: step-counter;
+            margin-bottom: 16px;
+            padding-left: 48px;
+            position: relative;
+        }
+        
+        .step-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #8b5cf6;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <h1>Enterprise RAG Documentation</h1>
+            <p>Complete guide to using the Enterprise RAG System</p>
+            <div class="nav-buttons">
+                <a href="/" class="nav-btn">
+                    <i class="fas fa-home"></i>
+                    Dashboard
+                </a>
+                <a href="/demo" class="nav-btn">
+                    <i class="fas fa-play"></i>
+                    Demo
+                </a>
+                <a href="/upload" class="nav-btn">
+                    <i class="fas fa-upload"></i>
+                    Upload
+                </a>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="sidebar">
+                <h3>Documentation</h3>
+                <ul class="nav-menu">
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#quick-start">Quick Start</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#configuration">Configuration</a></li>
+                    <li><a href="#api-reference">API Reference</a></li>
+                    <li><a href="#web-interface">Web Interface</a></li>
+                    <li><a href="#models">Model Selection</a></li>
+                    <li><a href="#performance">Performance</a></li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
+                    <li><a href="#monitoring">Monitoring</a></li>
+                </ul>
+            </div>
+            
+            <div class="main-content">
+                <div id="overview" class="section">
+                    <h2>Overview</h2>
+                    <p>The Enterprise RAG System is a production-ready, multi-modal Retrieval-Augmented Generation platform designed for enterprise deployments. It combines advanced document processing, intelligent search, and AI-powered question answering with enterprise-grade reliability and monitoring.</p>
+                    
+                    <div class="info-box">
+                        <h4><i class="fas fa-info-circle"></i> What is RAG?</h4>
+                        <p>Retrieval-Augmented Generation (RAG) combines document search with AI generation to provide accurate, source-cited responses based on your specific documents and data.</p>
+                    </div>
+                    
+                    <h3>Key Benefits</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4><i class="fas fa-file-alt"></i> Multi-Modal Processing</h4>
+                            <p>Support for PDF, DOCX, TXT, CSV, images, audio, and video files with OCR and transcription capabilities.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-brain"></i> Intelligent Search</h4>
+                            <p>Hybrid search combining semantic, BM25, and cross-encoder re-ranking for optimal results.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-chart-line"></i> Enterprise Monitoring</h4>
+                            <p>Comprehensive monitoring with Prometheus and Grafana dashboards for production deployments.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4><i class="fas fa-cogs"></i> Auto-Configuration</h4>
+                            <p>Intelligent system detection and automatic configuration optimization for your hardware.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="quick-start" class="section">
+                    <h2>Quick Start</h2>
+                    <p>Get up and running with the Enterprise RAG System in minutes.</p>
+                    
+                    <h3>Prerequisites</h3>
+                    <ul class="step-list">
+                        <li>Docker and Docker Compose installed</li>
+                        <li>4GB+ RAM available</li>
+                        <li>10GB+ storage space</li>
+                        <li>Internet connection for model download</li>
+                    </ul>
+                    
+                    <h3>One-Command Setup</h3>
+                    <div class="code-block">
+# Clone and start the system
+git clone &lt;repository-url&gt;
+cd rag-enterprise
+./start.sh
+                    </div>
+                    
+                    <div class="success-box">
+                        <h4><i class="fas fa-check-circle"></i> What happens automatically:</h4>
+                        <ul>
+                            <li>System architecture detection (ARM64/AMD64)</li>
+                            <li>Optimal model download and configuration</li>
+                            <li>Docker services startup and health checks</li>
+                            <li>Web interface availability</li>
+                        </ul>
+                    </div>
+                    
+                    <h3>Access Points</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>URL</th>
+                                <th>Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Web Interface</strong></td>
+                                <td>http://localhost:8000</td>
+                                <td>Main user interface</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Qdrant Dashboard</strong></td>
+                                <td>http://localhost:6334</td>
+                                <td>Vector database management</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Prometheus</strong></td>
+                                <td>http://localhost:9090</td>
+                                <td>Metrics and monitoring</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Grafana</strong></td>
+                                <td>http://localhost:3000</td>
+                                <td>Visualization dashboards</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="features" class="section">
+                    <h2>Features</h2>
+                    
+                    <h3>Document Processing</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>📄 Documents</h4>
+                            <p>PDF, DOCX, TXT, CSV, XLSX, HTML, RTF, EML</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>🖼️ Images</h4>
+                            <p>PNG, JPG, JPEG, BMP, TIFF with OCR</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>🎵 Audio</h4>
+                            <p>MP3, WAV, FLAC, M4A with transcription</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>🎬 Video</h4>
+                            <p>MP4, MOV, AVI, MKV with audio processing</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Intelligent Processing</h3>
+                    <ul>
+                        <li><strong>Hierarchical Chunking</strong>: Document → Section → Paragraph → Sentence levels</li>
+                        <li><strong>Enhanced Metadata</strong>: Rich indexing for better retrieval</li>
+                        <li><strong>Hybrid Search</strong>: Semantic + BM25 + Cross-encoder re-ranking</li>
+                        <li><strong>Enterprise Prompting</strong>: Context-aware, source-cited responses</li>
+                    </ul>
+                    
+                    <h3>Enterprise Features</h3>
+                    <ul>
+                        <li><strong>Production Monitoring</strong>: Prometheus + Grafana dashboards</li>
+                        <li><strong>Health Checks</strong>: Automatic service monitoring</li>
+                        <li><strong>Architecture Independence</strong>: ARM64/AMD64 support</li>
+                        <li><strong>Configurable Deployment</strong>: Easy model switching and tuning</li>
+                        <li><strong>Docker Containerization</strong>: Consistent deployment across environments</li>
+                    </ul>
+                </div>
+                
+                <div id="configuration" class="section">
+                    <h2>Configuration</h2>
+                    
+                    <h3>Auto-Configuration System</h3>
+                    <p>The system automatically detects your hardware and generates optimal configurations:</p>
+                    
+                    <div class="code-block">
+# Generate optimal configuration for your system
+./scripts/generate_config.sh
+
+# Force specific tier (laptop/workstation/server/enterprise)
+./scripts/generate_config.sh --tier laptop
+
+# Apply customer overrides
+cp configs/auto_generated.env configs/customer_overrides.env
+# Edit the overrides file, then regenerate
+./scripts/generate_config.sh --force
+                    </div>
+                    
+                    <h3>Model Selection</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Size</th>
+                                <th>Quality</th>
+                                <th>Speed</th>
+                                <th>Use Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Qwen2-7B</strong></td>
+                                <td>4.7GB</td>
+                                <td>⭐⭐⭐⭐⭐</td>
+                                <td>⭐⭐⭐</td>
+                                <td>Enterprise (Default)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Qwen2.5-3B</strong></td>
+                                <td>2GB</td>
+                                <td>⭐⭐⭐⭐</td>
+                                <td>⭐⭐⭐⭐</td>
+                                <td>Fast Enterprise</td>
+                            </tr>
+                            <tr>
+                                <td><strong>TinyLlama</strong></td>
+                                <td>668MB</td>
+                                <td>⭐⭐</td>
+                                <td>⭐⭐⭐⭐⭐</td>
+                                <td>Development/Testing</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3>Performance Parameters</h3>
+                    <div class="info-box">
+                        <h4><i class="fas fa-cog"></i> Key Configuration Parameters</h4>
+                        <ul>
+                            <li><strong>Context Size</strong>: Maximum tokens for processing (1024-4096)</li>
+                            <li><strong>Batch Size</strong>: Tokens processed in parallel (64-512)</li>
+                            <li><strong>Threads</strong>: CPU threads for processing (2-16)</li>
+                            <li><strong>GPU Layers</strong>: GPU acceleration layers (0-35)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div id="api-reference" class="section">
+                    <h2>API Reference</h2>
+                    
+                    <h3>Document Ingestion</h3>
+                    <div class="code-block">
+# Upload single document
+curl -X POST http://localhost:8000/ingest \
+  -F 'files=@document.pdf'
+
+# Upload multiple documents
+curl -X POST http://localhost:8000/ingest \
+  -F 'files=@doc1.pdf' \
+  -F 'files=@doc2.docx' \
+  -F 'files=@image.jpg'
+                    </div>
+                    
+                    <h3>Chat Interface</h3>
+                    <div class="code-block">
+# Ask a question
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What are the main features?",
+    "top_k": 5,
+    "semantic_weight": 0.7,
+    "bm25_weight": 0.3
+  }'
+                    </div>
+                    
+                    <h3>Search Documents</h3>
+                    <div class="code-block">
+# Search without LLM generation
+curl -X POST http://localhost:8000/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "performance metrics", "top_k": 10}'
+                    </div>
+                    
+                    <h3>System Information</h3>
+                    <div class="code-block">
+# Get system status and configuration
+curl http://localhost:8000/system
+                    </div>
+                </div>
+                
+                <div id="web-interface" class="section">
+                    <h2>Web Interface</h2>
+                    
+                    <h3>Main Dashboard</h3>
+                    <p>Access the comprehensive dashboard at <code>http://localhost:8000</code> for:</p>
+                    <ul>
+                        <li>System health monitoring</li>
+                        <li>Performance metrics</li>
+                        <li>Model information</li>
+                        <li>Quick access to all features</li>
+                    </ul>
+                    
+                    <h3>Document Upload</h3>
+                    <p>Use the drag-and-drop interface to upload documents:</p>
+                    <ol>
+                        <li>Navigate to the upload section</li>
+                        <li>Drag files or click to select</li>
+                        <li>Monitor processing progress</li>
+                        <li>View processing results</li>
+                    </ol>
+                    
+                    <h3>Chat Interface</h3>
+                    <p>Interactive chat with your documents:</p>
+                    <ul>
+                        <li>Ask questions in natural language</li>
+                        <li>View source citations</li>
+                        <li>See confidence scores</li>
+                        <li>Export conversations</li>
+                    </ul>
+                </div>
+                
+                <div id="models" class="section">
+                    <h2>Model Selection</h2>
+                    
+                    <h3>Automatic Model Selection</h3>
+                    <p>The system automatically selects the best model based on your hardware:</p>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>💻 Laptop Tier</h4>
+                            <p>2-4 cores, <8GB RAM<br>TinyLlama (668MB) - Fastest</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>🖥️ Workstation Tier</h4>
+                            <p>4-8 cores, 8-16GB RAM<br>Qwen2.5-3B (2GB) - Balanced</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>🖥️ Server Tier</h4>
+                            <p>8+ cores, 16-32GB RAM<br>Qwen2.5-3B (2GB) - High Performance</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>🏢 Enterprise Tier</h4>
+                            <p>12+ cores, 32GB+ RAM<br>Qwen2-7B (4.7GB) - Maximum Quality</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Manual Model Selection</h3>
+                    <div class="code-block">
+# Use specific model
+MODEL_CONFIG=qwen2-7b ./start.sh      # Enterprise (default)
+MODEL_CONFIG=qwen2.5-3b ./start.sh    # Fast enterprise
+MODEL_CONFIG=tinyllama ./start.sh      # Development
+                    </div>
+                </div>
+                
+                <div id="performance" class="section">
+                    <h2>Performance</h2>
+                    
+                    <h3>Optimization Features</h3>
+                    <ul>
+                        <li><strong>Auto-Configuration</strong>: Optimal settings for your hardware</li>
+                        <li><strong>Model Quantization</strong>: Q4_K_M format for memory efficiency</li>
+                        <li><strong>Context Optimization</strong>: Reduced context for faster processing</li>
+                        <li><strong>Batch Processing</strong>: CPU-optimized batch sizes</li>
+                        <li><strong>Streaming Responses</strong>: Faster first-token generation</li>
+                    </ul>
+                    
+                    <h3>Performance Benchmarks</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Context Size</th>
+                                <th>Response Time</th>
+                                <th>Memory Usage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>TinyLlama</td>
+                                <td>1024</td>
+                                <td>30-50 seconds</td>
+                                <td>~2GB</td>
+                            </tr>
+                            <tr>
+                                <td>Qwen2.5-3B</td>
+                                <td>2048</td>
+                                <td>40-60 seconds</td>
+                                <td>~4GB</td>
+                            </tr>
+                            <tr>
+                                <td>Qwen2-7B</td>
+                                <td>4096</td>
+                                <td>60-90 seconds</td>
+                                <td>~8GB</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="troubleshooting" class="section">
+                    <h2>Troubleshooting</h2>
+                    
+                    <h3>Common Issues</h3>
+                    
+                    <div class="warning-box">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Model Download Fails</h4>
+                        <p><strong>Solution:</strong> Check internet connection and try manual download:</p>
+                        <div class="code-block">
+# Check connection
+curl -I https://huggingface.co
+
+# Manual download
+wget https://huggingface.co/Qwen/Qwen2-7B-Instruct-GGUF/resolve/main/qwen2-7b-instruct-q4_k_m.gguf
+                        </div>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h4><i class="fas fa-exclamation-triangle"></i> LLM Timeout</h4>
+                        <p><strong>Solution:</strong> Use smaller model or increase timeout:</p>
+                        <div class="code-block">
+# Use smaller model
+MODEL_CONFIG=tinyllama ./start.sh
+
+# Or increase timeout in config
+timeout: 300  # 5 minutes
+                        </div>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Memory Issues</h4>
+                        <p><strong>Solution:</strong> Reduce model threads or use smaller model:</p>
+                        <div class="code-block">
+# Check available memory
+free -h
+
+# Reduce threads in config
+threads: 4  # Instead of 8
+                        </div>
+                    </div>
+                    
+                    <h3>Health Checks</h3>
+                    <div class="code-block">
+# Check service status
+docker-compose ps
+
+# View logs
+docker-compose logs -f backend
+docker-compose logs -f llama-cpp
+
+# Health endpoints
+curl http://localhost:8000/          # API health
+curl http://localhost:6334/collections # Qdrant health
+curl http://localhost:8080/health    # LLM health
+                    </div>
+                </div>
+                
+                <div id="monitoring" class="section">
+                    <h2>Monitoring</h2>
+                    
+                    <h3>Prometheus Metrics</h3>
+                    <p>Access Prometheus at <code>http://localhost:9090</code> for:</p>
+                    <ul>
+                        <li>API performance metrics</li>
+                        <li>LLM generation times</li>
+                        <li>Vector store statistics</li>
+                        <li>System resource usage</li>
+                    </ul>
+                    
+                    <h3>Grafana Dashboards</h3>
+                    <p>Access Grafana at <code>http://localhost:3000</code> (admin/admin) for:</p>
+                    <ul>
+                        <li>System overview dashboard</li>
+                        <li>API analytics</li>
+                        <li>LLM performance metrics</li>
+                        <li>Document processing statistics</li>
+                    </ul>
+                    
+                    <h3>Qdrant Dashboard</h3>
+                    <p>Access Qdrant at <code>http://localhost:6334</code> for:</p>
+                    <ul>
+                        <li>Vector collection management</li>
+                        <li>Search performance metrics</li>
+                        <li>Index statistics</li>
+                        <li>Data visualization</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Smooth scrolling for navigation
+        document.querySelectorAll('.nav-menu a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                
+                if (targetSection) {
+                    targetSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    
+                    // Update active state
+                    document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+        
+        // Update active nav based on scroll position
+        window.addEventListener('scroll', function() {
+            const sections = document.querySelectorAll('.section');
+            const navLinks = document.querySelectorAll('.nav-menu a');
+            
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.pageYOffset >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

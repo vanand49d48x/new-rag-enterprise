@@ -1,0 +1,68 @@
+# Qwen2.5-3B Optimized Configuration
+# Balanced performance and quality for enterprise use
+
+# Model Configuration - Using Qwen2.5-3B
+model:
+  name: "qwen2.5-3b"  # Switch to Qwen2.5-3B for better speed
+  # Model-specific settings optimized for Qwen2.5-3B
+  qwen2.5-3b:
+    filename: "qwen2.5-3b-instruct-q4_k_m.gguf"
+    context_size: 2048
+    threads: 16  # Optimized for your enterprise hardware
+    batch_size: 512
+    max_tokens: 128
+  qwen2-7b:
+    filename: "qwen2-7b-instruct-q4_k_m.gguf"
+    context_size: 2048
+    threads: 16
+    batch_size: 512
+    max_tokens: 128
+  tinyllama:
+    filename: "tinyllama-1.1b-chat-v0.3.Q4_K_M.gguf"
+    context_size: 1024
+    threads: 16
+    batch_size: 512
+    max_tokens: 128
+
+# API Configuration - Optimized timeouts
+api:
+  host: "0.0.0.0"
+  port: 8000
+  timeout: 90  # Reduced timeout for faster model
+  max_file_size: 100
+
+# Vector Store Configuration
+vector_store:
+  host: "qdrant"
+  port: 6334
+  collection_name: "enterprise_docs"
+  vector_size: 384
+
+# LLM Configuration - Optimized for Qwen2.5-3B
+llm:
+  backend: "llama_cpp"
+  api_url: "http://llama-cpp:8080/completion"
+  temperature: 0.6  # Balanced for speed and quality
+  top_p: 0.85  # Optimized for Qwen2.5-3B
+  top_k: 30  # Balanced settings
+  repeat_penalty: 1.08  # Slightly reduced for speed
+
+# Processing Configuration - Optimized for speed
+processing:
+  chunk_size: 350  # Optimized chunk size
+  chunk_overlap: 40  # Reduced overlap for speed
+  max_workers: 6  # Good parallel processing
+
+# Monitoring Configuration
+monitoring:
+  prometheus_port: 9090
+  grafana_port: 3000
+  grafana_password: "admin"
+
+# Deployment Configuration
+deployment:
+  platform: "auto"
+  restart_policy: "unless-stopped"
+  health_check_interval: 30
+  health_check_timeout: 10
+  health_check_retries: 3 

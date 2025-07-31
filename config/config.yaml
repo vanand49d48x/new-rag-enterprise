@@ -1,0 +1,11 @@
+llm_backend:
+  preferred: llama_cpp
+  fallback_order: []  # no fallback
+
+llama_cpp:
+  url: http://llama-cpp:8080
+  model: qwen1_5-7b-chat-q4_K_M.gguf
+
+qdrant:
+  url: http://qdrant:6333
+  collection: docs

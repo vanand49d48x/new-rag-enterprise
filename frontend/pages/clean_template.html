@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enterprise RAG System</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .upload-section { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .chat-section { background: #f8f9fa; padding: 20px; border-radius: 10px; }
+        .file-input { margin: 10px 0; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .supported-formats { background: #e9ecef; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        #chatResponse { background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Enterprise RAG System</h1>
+        <p>Multi-modal document processing and intelligent chat</p>
+        <div style="margin-top: 15px;">
+            <a href="/documentation" target="_blank" style="color: white; text-decoration: none; padding: 8px 16px; background: rgba(255,255,255,0.2); border-radius: 5px; margin-right: 10px;">
+                📖 Documentation
+            </a>
+            <a href="/dashboard" target="_blank" style="color: white; text-decoration: none; padding: 8px 16px; background: rgba(255,255,255,0.2); border-radius: 5px;">
+                📊 Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <div class="upload-section">
+        <h2>📁 Upload Documents</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="file-input">
+                <input type="file" id="files" name="files" multiple accept=".pdf,.docx,.txt,.csv,.xlsx,.html,.rtf,.eml,.png,.jpg,.jpeg,.bmp,.tiff,.mp3,.wav,.flac,.m4a,.mp4,.mov,.avi,.mkv">
+            </div>
+            <button type="submit" class="btn">Upload & Process</button>
+        </form>
+        
+        <div class="supported-formats">
+            <h4>Supported Formats:</h4>
+            <strong>Documents:</strong> PDF, DOCX, TXT, CSV, XLSX, HTML, RTF, EML<br>
+            <strong>Images:</strong> PNG, JPG, JPEG, BMP, TIFF (with OCR)<br>
+            <strong>Audio:</strong> MP3, WAV, FLAC, M4A<br>
+            <strong>Video:</strong> MP4, MOV, AVI, MKV
+        </div>
+        
+        <div id="uploadStatus"></div>
+    </div>
+    
+            <div class="chat-section">
+            <h2>💬 Chat with Your Documents</h2>
+            <div id="chatHistory" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; background: white; border-radius: 5px;"></div>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="query" placeholder="Ask a question about your documents..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <button onclick="askQuestion()" class="btn">Ask</button>
+            </div>
+        </div>
+
+    <script>
+        document.getElementById('uploadForm').onsubmit = async function(e) {
+            e.preventDefault();
+            console.log('Form submitted');
+            
+            const fileInput = document.getElementById('files');
+            console.log('File input element:', fileInput);
+            console.log('File input files:', fileInput.files);
+            console.log('Files length:', fileInput.files.length);
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                console.error('No files selected');
+                document.getElementById('uploadStatus').innerHTML = '<div class="status error">❌ Please select at least one file</div>';
+                return;
+            }
+            
+            const formData = new FormData();
+            
+            for (let i = 0; i < fileInput.files.length; i++) {
+                const file = fileInput.files[i];
+                console.log('Adding file:', file.name, 'Size:', file.size);
+                formData.append('files', file);
+            }
+            
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = '<div class="status">Uploading and processing files...</div>';
+            
+            try {
+                console.log('Making request to /ingest');
+                const response = await fetch('/ingest', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('Response status:', response.status);
+                
+                const result = await response.json();
+                console.log('Response JSON:', result);
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = '<div class="status success">✅ ' + result.message + '<br>Files processed: ' + result.details.length + '</div>';
+                } else {
+                    statusDiv.innerHTML = '<div class="status error">❌ Error: ' + result.detail + '</div>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.innerHTML = '<div class="status error">❌ Error: ' + error.message + '</div>';
+            }
+        };
+        
+        async function askQuestion() {
+            const query = document.getElementById('query').value;
+            if (!query) return;
+            
+            const chatHistory = document.getElementById('chatHistory');
+            const queryInput = document.getElementById('query');
+            
+            // Add user question to chat history
+            const questionDiv = document.createElement('div');
+            questionDiv.style.cssText = 'margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-radius: 5px; border-left: 4px solid #2196f3;';
+            questionDiv.innerHTML = '<strong>You:</strong> ' + query;
+            chatHistory.appendChild(questionDiv);
+            
+            // Create answer container
+            const answerDiv = document.createElement('div');
+            answerDiv.style.cssText = 'margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px; border-left: 4px solid #4caf50;';
+            answerDiv.innerHTML = '<strong>Assistant:</strong> <div class="status">Generating answer...</div>';
+            chatHistory.appendChild(answerDiv);
+            
+            // Clear input
+            queryInput.value = '';
+            
+            // Scroll to bottom
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            
+            try {
+                const response = await fetch('/chat/stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+                
+                if (response.ok) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let answer = '';
+                    let sources = [];
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+                        
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+                                    
+                                    if (data.type === 'sources') {
+                                        sources = data.sources || [];
+                                        answerDiv.innerHTML = '<strong>Assistant:</strong> <div class="status">Sources found, generating answer...</div>';
+                                    } else if (data.type === 'token') {
+                                        answer += data.content;
+                                        answerDiv.innerHTML = '<strong>Assistant:</strong> ' + answer + '<div class="status">Generating...</div>';
+                                    } else if (data.type === 'done') {
+                                        const sourcesHtml = sources.map(function(source) {
+                                            return '<li>' + source.title + ' (' + source.chunk_level + ')</li>';
+                                        }).join('');
+                                        answerDiv.innerHTML = '<strong>Assistant:</strong> ' + answer + '<br><br><strong>Sources:</strong><ul>' + sourcesHtml + '</ul>';
+                                        chatHistory.scrollTop = chatHistory.scrollHeight;
+                                        return;
+                                    }
+                                } catch (e) {
+                                    // Ignore JSON parse errors
+                                }
+                            }
+                        }
+                        // Scroll to bottom as content streams
+                        chatHistory.scrollTop = chatHistory.scrollHeight;
+                    }
+                } else {
+                    answerDiv.innerHTML = '<strong>Assistant:</strong> <div class="status error">❌ Error: Streaming response not available</div>';
+                }
+            } catch (error) {
+                answerDiv.innerHTML = '<strong>Assistant:</strong> <div class="status error">❌ Error: ' + error.message + '</div>';
+            }
+            
+            // Scroll to bottom
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,31 @@
+MEDICAL DISEASES REFERENCE
+
+DIABETES MELLITUS
+- Type 1 Diabetes: Autoimmune condition where pancreas produces little to no insulin
+- Type 2 Diabetes: Body becomes resistant to insulin or doesn't produce enough
+- Symptoms: Increased thirst, frequent urination, extreme hunger, unexplained weight loss
+- Risk Factors: Family history, obesity, physical inactivity, age over 45
+- Complications: Heart disease, kidney damage, nerve damage, eye problems
+
+HYPERTENSION (HIGH BLOOD PRESSURE)
+- Definition: Blood pressure consistently above 130/80 mmHg
+- Primary Hypertension: No identifiable cause, develops gradually
+- Secondary Hypertension: Caused by underlying condition
+- Symptoms: Often asymptomatic, may include headaches, shortness of breath, nosebleeds
+- Risk Factors: Age, family history, obesity, high salt intake, stress
+- Complications: Heart attack, stroke, kidney disease, vision loss
+
+ASTHMA
+- Chronic inflammatory disease of the airways
+- Symptoms: Wheezing, shortness of breath, chest tightness, coughing
+- Triggers: Allergens, exercise, cold air, respiratory infections
+- Types: Allergic asthma, non-allergic asthma, exercise-induced asthma
+- Risk Factors: Family history, allergies, respiratory infections in childhood
+- Complications: Severe asthma attacks, sleep problems, reduced activity levels
+
+DEPRESSION
+- Mental health disorder characterized by persistent sadness and loss of interest
+- Symptoms: Depressed mood, loss of interest, changes in appetite, sleep problems
+- Types: Major depressive disorder, persistent depressive disorder, seasonal affective disorder
+- Risk Factors: Family history, trauma, stress, medical conditions
+- Complications: Suicide, substance abuse, relationship problems, work issues 

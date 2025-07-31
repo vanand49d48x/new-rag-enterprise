@@ -1,0 +1,24 @@
+api:
+  timeout: 120
+llm:
+  repeat_penalty: 1.05
+  temperature: 0.4
+  top_k: 30
+  top_p: 0.85
+model:
+  name: qwen2.5-3b
+  qwen25-3b:
+    batch_size: 512
+    context_size: 2048
+    filename: qwen25-3b-instruct-q4_k_m.gguf
+    max_tokens: 192
+    threads: 16
+processing:
+  chunk_overlap: 40
+  chunk_size: 350
+  max_workers: 6
+quality:
+  completeness_threshold: 0.7
+  medical_terms_weight: 1.2
+  professional_tone_weight: 1.1
+  structure_penalty: 0.8

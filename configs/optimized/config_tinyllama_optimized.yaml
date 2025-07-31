@@ -1,0 +1,35 @@
+model:
+  name: "tinyllama"
+  tinyllama:
+    filename: "tinyllama-1.1b-chat-v0.3.Q4_K_M.gguf"
+    context_size: 2048
+    threads: 16
+    batch_size: 512
+    max_tokens: 256
+
+api:
+  timeout: 90
+
+llm:
+  temperature: 0.2
+  top_p: 0.9
+  top_k: 40
+  repeat_penalty: 1.15
+
+processing:
+  chunk_size: 350
+  chunk_overlap: 40
+  max_workers: 8
+
+# Quality optimization settings for TinyLlama
+quality:
+  # Enhanced medical terminology recognition
+  medical_terms_weight: 1.3
+  # Structured response preference (more important for smaller model)
+  structure_penalty: 0.7
+  # Professional tone enhancement
+  professional_tone_weight: 1.2
+  # Completeness scoring
+  completeness_threshold: 0.6
+  # Length optimization (TinyLlama needs more guidance)
+  min_length_threshold: 150 

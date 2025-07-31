@@ -1,0 +1,33 @@
+model:
+  name: "qwen2.5-3b"
+  qwen2.5-3b:
+    filename: "qwen2.5-3b-instruct-q4_k_m.gguf"
+    context_size: 4096
+    threads: 16
+    batch_size: 512
+    max_tokens: 256
+
+api:
+  timeout: 120
+
+llm:
+  temperature: 0.3
+  top_p: 0.9
+  top_k: 40
+  repeat_penalty: 1.1
+
+processing:
+  chunk_size: 400
+  chunk_overlap: 50
+  max_workers: 6
+
+# Quality optimization settings
+quality:
+  # Enhanced medical terminology recognition
+  medical_terms_weight: 1.2
+  # Structured response preference
+  structure_penalty: 0.8
+  # Professional tone enhancement
+  professional_tone_weight: 1.1
+  # Completeness scoring
+  completeness_threshold: 0.7 

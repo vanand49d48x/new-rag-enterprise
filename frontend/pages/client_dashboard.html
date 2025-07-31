@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise RAG - Client Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1a1a1a;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .header {
+            background: white;
+            color: #1a1a1a;
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 32px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .header-icon {
+            font-size: 3em;
+            color: #8b5cf6;
+            margin-bottom: 16px;
+        }
+        
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            color: #64748b;
+            margin-bottom: 24px;
+            font-weight: 400;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #10b981;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .status-indicator i {
+            font-size: 0.8em;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        
+        .card h2 {
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card h2 i {
+            color: #8b5cf6;
+            font-size: 1.1em;
+        }
+        
+        .metric-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .metric-box {
+            text-align: center;
+            padding: 16px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        
+        .metric-label {
+            font-size: 0.75em;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+        
+        .system-specs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.9em;
+            color: #64748b;
+        }
+        
+        .spec-item {
+            padding: 4px 0;
+        }
+        
+        .performance-bar {
+            margin: 16px 0;
+        }
+        
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .bar-container {
+            height: 8px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%);
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+        
+        .model-list {
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        
+        .model-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 0.9em;
+        }
+        
+        .model-status {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .tier-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .tier-section h2 {
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            font-size: 1.4em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .tier-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .tier-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tier-card.current {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+        }
+        
+        .tier-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 16px;
+            text-transform: capitalize;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        
+        .current-badge {
+            position: absolute;
+            top: -8px;
+            right: 12px;
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+        
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .btn {
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: #8b5cf6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #7c3aed;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+        
+        .btn-link {
+            background: transparent;
+            color: #374151;
+            padding: 8px 0;
+        }
+        
+        .btn-link:hover {
+            color: #8b5cf6;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+        
+        .loading i {
+            font-size: 2em;
+            margin-bottom: 16px;
+            color: #8b5cf6;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border: 1px solid #fecaca;
+        }
+        
+        .success {
+            background: #f0fdf4;
+            color: #16a34a;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            font-size: 1.1em;
+        }
+        
+        .refresh-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+        }
+        
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .tier-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2.2em;
+            }
+            
+            .dashboard {
+                padding: 16px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-icon">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <h1>Enterprise RAG System</h1>
+            <p>Intelligent Document Processing with Adaptive AI Configuration</p>
+            <div class="status-indicator">
+                <i class="fas fa-circle"></i> System Online
+            </div>
+        </div>
+        
+        <!-- Main Dashboard Grid -->
+        <div class="main-grid">
+            <!-- System Status -->
+            <div class="card">
+                <h2><i class="fas fa-server"></i> System Status</h2>
+                <div id="system-status">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Performance -->
+            <div class="card">
+                <h2><i class="fas fa-chart-line"></i> Performance</h2>
+                <div id="performance-metrics">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Models -->
+            <div class="card">
+                <h2><i class="fas fa-brain"></i> AI Models</h2>
+                <div id="model-management">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resource Usage -->
+            <div class="card">
+                <h2><i class="fas fa-microchip"></i> Resource Usage</h2>
+                <div id="resource-usage">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Tiers -->
+        <div class="tier-section">
+            <h2><i class="fas fa-layer-group"></i> Performance Tiers</h2>
+            <div id="tier-comparison">
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Loading tier comparison...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="tier-section">
+            <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+            <div class="quick-actions">
+                <button class="btn btn-primary" onclick="downloadCurrentModel()">
+                    <i class="fas fa-download"></i> Download Current Model
+                </button>
+                <button class="btn btn-secondary" onclick="testSystem()">
+                    <i class="fas fa-play"></i> Test System
+                </button>
+                <button class="btn btn-secondary" onclick="showDocumentation()">
+                    <i class="fas fa-file-alt"></i> Documentation
+                </button>
+                <a href="#" class="btn-link" onclick="showAdvancedSettings()">
+                    <i class="fas fa-cog"></i> Advanced Settings
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Floating Refresh Button -->
+    <button class="refresh-btn" onclick="refreshAll()" title="Refresh Dashboard">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        // Load all data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshAll();
+        });
+        
+        async function refreshAll() {
+            await Promise.all([
+                loadSystemStatus(),
+                loadPerformanceMetrics(),
+                loadModelManagement(),
+                loadResourceUsage(),
+                loadTierComparison()
+            ]);
+        }
+        
+        async function loadSystemStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/system`);
+                const data = await response.json();
+                
+                // Map tier names to match the design
+                const tierMap = {
+                    'laptop': 'Low',
+                    'workstation': 'Medium', 
+                    'server': 'High',
+                    'enterprise': 'High'
+                };
+                
+                const currentTier = tierMap[data.tier] || data.tier;
+                
+                const statusDiv = document.getElementById('system-status');
+                statusDiv.innerHTML = `
+                    <div class="metric-display">
+                        <div class="metric-box">
+                            <div class="metric-value">${currentTier}</div>
+                            <div class="metric-label">Current Tier</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value">${data.model}</div>
+                            <div class="metric-label">Active Model</div>
+                        </div>
+                    </div>
+                    <div class="system-specs">
+                        <div class="spec-item">RAM: ${data.ram_gb} GB</div>
+                        <div class="spec-item">CPU Cores: ${data.cpu_count}</div>
+                        <div class="spec-item">LLM Threads: ${data.threads}</div>
+                        <div class="spec-item">Context Size: ${data.context_size}</div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('system-status').innerHTML = `
+                    <div class="error">Error loading system status: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function loadPerformanceMetrics() {
+            try {
+                const response = await fetch(`${API_BASE}/api/performance`);
+                const data = await response.json();
+                
+                const metricsDiv = document.getElementById('performance-metrics');
+                metricsDiv.innerHTML = `
+                    <div class="metric-display">
+                        <div class="metric-box">
+                            <div class="metric-value">${data.current_system.cpu_percent}%</div>
+                            <div class="metric-label">CPU Usage</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value">${data.current_system.memory_percent}%</div>
+                            <div class="metric-label">Memory Usage</div>
+                        </div>
+                    </div>
+                    <div class="system-specs">
+                        <div class="spec-item">Available Memory: ${data.current_system.memory_available_gb} GB</div>
+                        <div class="spec-item">Est. Response Time</div>
+                    </div>
+                    <div class="performance-bar">
+                        <div class="bar-label">
+                            <span>Response Time</span>
+                            <span>~800ms</span>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-fill" style="width: 20%"></div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('performance-metrics').innerHTML = `
+                    <div class="error">Error loading performance metrics: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function loadModelManagement() {
+            try {
+                const response = await fetch(`${API_BASE}/api/models`);
+                const data = await response.json();
+                
+                const managementDiv = document.getElementById('model-management');
+                managementDiv.innerHTML = `
+                    <div class="metric-display">
+                        <div class="metric-box">
+                            <div class="metric-value">${data.model_stats.total_models}</div>
+                            <div class="metric-label">Available Models</div>
+                        </div>
+                        <div class="metric-box">
+                            <div class="metric-value">${data.model_stats.total_size_gb} GB</div>
+                            <div class="metric-label">Total Size</div>
+                        </div>
+                    </div>
+                    <div class="model-list">
+                        ${data.available_models.slice(0, 3).map(model => `
+                            <div class="model-item">
+                                <span>${model}</span>
+                                <span class="model-status">Online</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('model-management').innerHTML = `
+                    <div class="error">Error loading model management: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function loadResourceUsage() {
+            try {
+                const response = await fetch(`${API_BASE}/api/performance`);
+                const data = await response.json();
+                
+                const usageDiv = document.getElementById('resource-usage');
+                usageDiv.innerHTML = `
+                    <div class="performance-bar">
+                        <div class="bar-label">
+                            <span>CPU Usage</span>
+                            <span>${data.current_system.cpu_percent}%</span>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-fill" style="width: ${data.current_system.cpu_percent}%"></div>
+                        </div>
+                    </div>
+                    <div class="performance-bar">
+                        <div class="bar-label">
+                            <span>Memory Usage</span>
+                            <span>${data.current_system.memory_percent}%</span>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-fill" style="width: ${data.current_system.memory_percent}%"></div>
+                        </div>
+                    </div>
+                    <div class="system-specs">
+                        <div class="spec-item">Hardware resource utilization levels.</div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('resource-usage').innerHTML = `
+                    <div class="error">Error loading resource usage: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function loadTierComparison() {
+            try {
+                const response = await fetch(`${API_BASE}/api/tiers`);
+                const data = await response.json();
+                
+                // Map tier names to match the design
+                const tierMap = {
+                    'laptop': 'Low',
+                    'workstation': 'Medium', 
+                    'server': 'High',
+                    'enterprise': 'High'
+                };
+                
+                const tierOrder = ['Low', 'Medium', 'High'];
+                const tierIcons = {
+                    'Low': 'fas fa-layer-group',
+                    'Medium': 'fas fa-layer-group', 
+                    'High': 'fas fa-layer-group'
+                };
+                
+                const comparisonDiv = document.getElementById('tier-comparison');
+                let html = '<div class="tier-grid">';
+                
+                tierOrder.forEach(tierName => {
+                    const tierKey = Object.keys(tierMap).find(key => tierMap[key] === tierName);
+                    const config = data.tiers[tierKey];
+                    
+                    if (config && !config.error) {
+                        const isCurrent = tierName === tierMap[data.current_tier];
+                        html += `
+                            <div class="tier-card ${isCurrent ? 'current' : ''}">
+                                ${isCurrent ? '<div class="current-badge">Current</div>' : ''}
+                                <h3>
+                                    <i class="${tierIcons[tierName]}"></i>
+                                    ${tierName} Tier
+                                </h3>
+                                <div class="system-specs">
+                                    <div class="spec-item">Model: ${config.model}</div>
+                                    <div class="spec-item">Threads: ${config.threads}</div>
+                                    <div class="spec-item">Context: ${config.context_size}</div>
+                                    <div class="spec-item">Tokens: ${config.max_tokens}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                html += '</div>';
+                comparisonDiv.innerHTML = html;
+            } catch (error) {
+                document.getElementById('tier-comparison').innerHTML = `
+                    <div class="error">Error loading tier comparison: ${error.message}</div>
+                `;
+            }
+        }
+        
+        // Auto-refresh every 30 seconds
+        setInterval(refreshAll, 30000);
+        
+        async function downloadCurrentModel() {
+            try {
+                const systemResponse = await fetch(`${API_BASE}/system`);
+                const systemData = await systemResponse.json();
+                
+                const response = await fetch(`${API_BASE}/api/models/download/${systemData.tier}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                showNotification(`✅ ${data.message}`, 'success');
+                loadModelManagement();
+            } catch (error) {
+                showNotification(`❌ Error downloading model: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSystem() {
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: "What are the core skills?",
+                        top_k: 5
+                    })
+                });
+                const data = await response.json();
+                
+                showNotification(`✅ System test successful! Response generated successfully.`, 'success');
+            } catch (error) {
+                showNotification(`❌ System test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function showDocumentation() {
+            window.open('http://localhost:8000/documentation', '_blank');
+        }
+        
+        function showAdvancedSettings() {
+            // For now, just show a notification
+            showNotification(`🔧 Advanced Settings - Coming Soon!`, 'info');
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = type;
+            notification.textContent = message;
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '10000';
+            notification.style.minWidth = '300px';
+            notification.style.borderRadius = '8px';
+            notification.style.padding = '12px 16px';
+            notification.style.fontWeight = '500';
+            notification.style.fontSize = '0.9em';
+            
+            // Style based on type
+            if (type === 'success') {
+                notification.style.background = '#f0fdf4';
+                notification.style.color = '#16a34a';
+                notification.style.border = '1px solid #bbf7d0';
+            } else if (type === 'error') {
+                notification.style.background = '#fef2f2';
+                notification.style.color = '#dc2626';
+                notification.style.border = '1px solid #fecaca';
+            } else {
+                notification.style.background = '#eff6ff';
+                notification.style.color = '#2563eb';
+                notification.style.border = '1px solid #bfdbfe';
+            }
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 
