@@ -34,6 +34,9 @@ sentence-transformers==2.2.2
 beautifulsoup4==4.12.2
 lxml==6.0.0
 
+# Document format support
+striprtf==0.0.26
+
 # Image processing
 Pillow==11.3.0
 opencv-python==4.8.1.78
