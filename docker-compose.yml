@@ -11,8 +11,10 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-      - /tmp:/tmp  # For temporary file processing
-      - ./logs:/app/logs
+      - ./data/temp:/tmp  # For temporary file processing
+      - ./data/logs:/app/logs
+      - ./data/uploads:/app/uploads  # Uploads directory
+      - ./data/processed:/app/processed  # Processed files directory
     environment:
       - PYTHONPATH=/app
       - LLM_BACKEND=llama_cpp
@@ -31,9 +33,14 @@ services:
       - TEMP=${TEMP}
       - TOP_P=${TOP_P}
       - TOP_K=${TOP_K}
+      - UPLOAD_DIR=/app/uploads
+      - PROCESSED_DIR=/app/processed
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6334
     depends_on:
       - qdrant
       - llama-cpp
+      - tusd
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
@@ -68,7 +75,7 @@ services:
     restart: unless-stopped
     # GPU configuration removed for CPU-only deployment
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/completion"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/models"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -121,6 +128,25 @@ services:
     depends_on:
       - prometheus
     restart: unless-stopped
+
+  # tusd service for chunked file uploads
+  tusd:
+    image: tusproject/tusd:latest
+    platform: linux/amd64
+    ports:
+      - "1080:1080"
+    volumes:
+      - ./data/uploads:/data
+    environment:
+      - TUSD_DATA_DIR=/data
+    command: ["-upload-dir", "/data", "-host", "0.0.0.0", "-port", "1080", "-hooks-http", "http://backend:8000/enhanced-upload/tus-hooks"]
+    restart: unless-stopped
+    user: "1000:1000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:1080/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   qdrant_data:
