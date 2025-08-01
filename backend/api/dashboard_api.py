@@ -132,7 +132,24 @@ class DashboardAPI:
             
             # Get model information
             model_name = os.getenv('MODEL_NAME', 'Unknown')
-            tier = "Standard"  # Default tier
+            
+            # Determine tier based on system capabilities
+            try:
+                from backend.utils.adaptive_config import detect_tier
+                detected_tier = detect_tier()
+                if detected_tier == "enterprise":
+                    tier = "Enterprise"
+                elif detected_tier == "server":
+                    tier = "Server"
+                elif detected_tier == "workstation":
+                    tier = "Standard"
+                elif detected_tier == "laptop":
+                    tier = "Low Tier"
+                else:
+                    tier = "Standard"
+            except Exception as e:
+                logger.warning(f"Could not detect tier: {e}")
+                tier = "Standard"
             
             return SystemStatus(
                 status=overall_status,
@@ -201,6 +218,14 @@ class DashboardAPI:
                 if error_files > completed_files:
                     system_health = "error"
                 
+                # Count available models
+                models_dir = os.getenv('MODELS_DIR', '/app/models')
+                available_models = 0
+                if os.path.exists(models_dir):
+                    for file in os.listdir(models_dir):
+                        if file.endswith('.gguf'):
+                            available_models += 1
+                
                 # Calculate total size in GB
                 total_size_gb = round(storage_used / (1024**3), 2)
                 total_size_str = f"{total_size_gb} GB"
@@ -216,12 +241,23 @@ class DashboardAPI:
                     system_health=system_health,
                     cpu_usage=cpu_percent,
                     memory_usage=memory.percent,
-                    available_models=1,  # Default to 1 model available
+                    available_models=available_models,
                     total_size=total_size_str
                 )
                 
         except Exception as e:
             logger.error(f"Error getting dashboard stats: {e}")
+            # Count available models even in error case
+            models_dir = os.getenv('MODELS_DIR', '/app/models')
+            available_models = 0
+            try:
+                if os.path.exists(models_dir):
+                    for file in os.listdir(models_dir):
+                        if file.endswith('.gguf'):
+                            available_models += 1
+            except:
+                pass
+            
             return DashboardStats(
                 total_files=0,
                 completed_files=0,
@@ -233,7 +269,7 @@ class DashboardAPI:
                 system_health="error",
                 cpu_usage=0.0,
                 memory_usage=0.0,
-                available_models=0,
+                available_models=available_models,
                 total_size="0 GB"
             )
 
