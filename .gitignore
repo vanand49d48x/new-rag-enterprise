@@ -1,12 +1,12 @@
 # Enterprise RAG System - Git Ignore
 
 # Models (large files - will be downloaded on deployment)
-models/
 models/*.gguf
 models/*.safetensors
 models/*.bin
 models/*.pt
 models/*.pth
+models/optimized/*/
 
 # Python
 __pycache__/
@@ -118,10 +118,11 @@ dmypy.json
 .pyre/
 
 # Large data files and directories
-data/uploads/
-data/processed/
-data/temp/
+data/uploads/*
+data/processed/*
+data/temp/*
 data/large/
+data/logs/*.log
 *.csv
 *.json
 *.xml
