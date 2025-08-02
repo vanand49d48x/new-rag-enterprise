@@ -60,3 +60,7 @@ def get_default_config():
             "similarity_threshold": 0.7
         }
     }
+
+def get_config():
+    """Get configuration - alias for load_config for backward compatibility"""
+    return load_config()

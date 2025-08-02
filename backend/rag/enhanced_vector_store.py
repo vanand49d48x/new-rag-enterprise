@@ -3,7 +3,6 @@ Enhanced Vector Store with Hybrid Retrieval
 Implements enterprise-grade retrieval with BM25 + semantic search + re-ranking
 """
 
-import logging
 from typing import List, Dict, Any, Optional, Tuple
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
@@ -16,10 +15,11 @@ import numpy as np
 from rank_bm25 import BM25Okapi
 from sentence_transformers import CrossEncoder
 import re
+from backend.utils.logging_config import get_logger
 
-from backend.rag.embedder import embed
+from backend.rag.embedder import Embedder
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class EnterpriseVectorStore:
     """
@@ -28,7 +28,8 @@ class EnterpriseVectorStore:
     
     def __init__(self, host: str = "qdrant", port: int = 6334):
         self.client = QdrantClient(host=host, port=port)
-        self.vector_size = 384  # Match embedder output
+        self.embedder = Embedder()
+        self.vector_size = self.embedder.get_embedding_dimension()
         self.collection_name = "enterprise_docs"
         
         # Initialize re-ranker
@@ -76,7 +77,7 @@ class EnterpriseVectorStore:
             
             for chunk in chunks:
                 # Generate vector embedding
-                vector = embed(chunk["text"])
+                vector = self.embedder.embed_text(chunk["text"])
                 
                 # Prepare payload with all metadata
                 payload = {
@@ -201,7 +202,7 @@ class EnterpriseVectorStore:
     ) -> List[Dict[str, Any]]:
         """Perform semantic search using vector similarity"""
         try:
-            query_vector = embed(query)
+            query_vector = self.embedder.embed_text(query)
             
             # Build filter if provided
             search_filter = None

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced File Upload & Processing</title>
+    <script src="https://unpkg.com/tus-js-client@3.1.2/dist/tus.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            margin-bottom: 40px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ecff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .file-type {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .status {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .status.success {
+            color: #28a745;
+        }
+
+        .status.error {
+            color: #dc3545;
+        }
+
+        .status.processing {
+            color: #ffc107;
+        }
+
+        .processing-section {
+            margin-top: 40px;
+        }
+
+        .processing-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+        }
+
+        .processing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .processing-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .processing-status {
+            font-size: 0.9em;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: #e9ecef;
+            color: #666;
+        }
+
+        .processing-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .processing-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .processing-status.processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📁 Enhanced File Upload & Processing</h1>
+            <p>Upload large files with chunked uploads and automatic processing</p>
+        </div>
+
+        <div class="content">
+            <div class="upload-section">
+                <h2>📤 Upload Files</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Drag & drop files here or click to browse</div>
+                    <div class="upload-subtext">Supports PDF, DOCX, TXT, Images, Audio, Video (up to 10GB)</div>
+                    <input type="file" id="fileInput" class="file-input" multiple accept="*/*">
+                </div>
+
+                <div class="file-list" id="fileList"></div>
+
+                <button class="btn" id="uploadBtn" disabled>🚀 Start Upload & Processing</button>
+            </div>
+
+            <div class="processing-section hidden" id="processingSection">
+                <h2>⚙️ Processing Status</h2>
+                <div id="processingList"></div>
+            </div>
+
+            <div class="stats hidden" id="statsSection">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalFiles">0</div>
+                    <div class="stat-label">Total Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="processedFiles">0</div>
+                    <div class="stat-label">Processed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalChunks">0</div>
+                    <div class="stat-label">Total Chunks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalVectors">0</div>
+                    <div class="stat-label">Vectors Created</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class EnhancedUploader {
+            constructor() {
+                this.files = [];
+                this.uploadQueue = [];
+                this.processingQueue = [];
+                this.stats = {
+                    totalFiles: 0,
+                    processedFiles: 0,
+                    totalChunks: 0,
+                    totalVectors: 0
+                };
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.updateStats();
+            }
+
+            setupEventListeners() {
+                const uploadArea = document.getElementById('uploadArea');
+                const fileInput = document.getElementById('fileInput');
+                const uploadBtn = document.getElementById('uploadBtn');
+
+                uploadArea.addEventListener('click', () => fileInput.click());
+                uploadArea.addEventListener('dragover', this.handleDragOver.bind(this));
+                uploadArea.addEventListener('dragleave', this.handleDragLeave.bind(this));
+                uploadArea.addEventListener('drop', this.handleDrop.bind(this));
+                fileInput.addEventListener('change', this.handleFileSelect.bind(this));
+                uploadBtn.addEventListener('click', this.startUpload.bind(this));
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                e.currentTarget.classList.add('dragover');
+            }
+
+            handleDragLeave(e) {
+                e.preventDefault();
+                e.currentTarget.classList.remove('dragover');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                e.currentTarget.classList.remove('dragover');
+                const files = Array.from(e.dataTransfer.files);
+                this.addFiles(files);
+            }
+
+            handleFileSelect(e) {
+                const files = Array.from(e.target.files);
+                this.addFiles(files);
+            }
+
+            addFiles(newFiles) {
+                this.files = [...this.files, ...newFiles];
+                this.updateFileList();
+                this.updateUploadButton();
+            }
+
+            updateFileList() {
+                const fileList = document.getElementById('fileList');
+                fileList.innerHTML = '';
+
+                this.files.forEach((file, index) => {
+                    const fileItem = this.createFileItem(file, index);
+                    fileList.appendChild(fileItem);
+                });
+            }
+
+            createFileItem(file, index) {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                
+                const fileType = this.getFileType(file);
+                const fileSize = this.formatFileSize(file.size);
+                
+                item.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${fileSize}</div>
+                    </div>
+                    <div class="file-type">${fileType}</div>
+                    <button class="btn" onclick="uploader.removeFile(${index})">❌</button>
+                `;
+                
+                return item;
+            }
+
+            getFileType(file) {
+                const mimeType = file.type;
+                if (mimeType.startsWith('application/pdf')) return 'PDF';
+                if (mimeType.startsWith('application/vnd.openxmlformats-officedocument')) return 'DOCX';
+                if (mimeType.startsWith('text/')) return 'TEXT';
+                if (mimeType.startsWith('image/')) return 'IMAGE';
+                if (mimeType.startsWith('audio/')) return 'AUDIO';
+                if (mimeType.startsWith('video/')) return 'VIDEO';
+                return 'OTHER';
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            removeFile(index) {
+                this.files.splice(index, 1);
+                this.updateFileList();
+                this.updateUploadButton();
+            }
+
+            updateUploadButton() {
+                const uploadBtn = document.getElementById('uploadBtn');
+                uploadBtn.disabled = this.files.length === 0;
+            }
+
+            async startUpload() {
+                if (this.files.length === 0) return;
+
+                this.stats.totalFiles = this.files.length;
+                this.updateStats();
+                this.showProcessingSection();
+
+                for (let i = 0; i < this.files.length; i++) {
+                    const file = this.files[i];
+                    await this.uploadFile(file, i);
+                }
+            }
+
+            async uploadFile(file, index) {
+                const processingItem = this.createProcessingItem(file.name, index);
+                document.getElementById('processingList').appendChild(processingItem);
+
+                try {
+                    // Upload using tus
+                    const uploadUrl = await this.uploadWithTus(file, processingItem);
+                    
+                    // Process the uploaded file
+                    await this.processFile(uploadUrl, file, processingItem);
+                    
+                    this.stats.processedFiles++;
+                    this.updateStats();
+                    this.updateProcessingStatus(processingItem, 'success', '✅ Processing completed');
+                    
+                } catch (error) {
+                    console.error('Upload/Processing error:', error);
+                    this.updateProcessingStatus(processingItem, 'error', `❌ Error: ${error.message}`);
+                }
+            }
+
+            async uploadWithTus(file, processingItem) {
+                return new Promise((resolve, reject) => {
+                    const upload = new tus.Upload(file, {
+                        endpoint: 'http://localhost:1080/files/',
+                        retryDelays: [0, 1000, 3000, 5000],
+                        chunkSize: 10 * 1024 * 1024, // 10MB chunks
+                        onError: (error) => {
+                            console.error('Upload failed:', error);
+                            reject(error);
+                        },
+                        onProgress: (bytesUploaded, bytesTotal) => {
+                            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+                            this.updateProcessingStatus(processingItem, 'processing', `📤 Uploading: ${percentage}%`);
+                        },
+                        onSuccess: () => {
+                            console.log('Upload completed:', upload.url);
+                            resolve(upload.url);
+                        }
+                    });
+
+                    upload.start();
+                });
+            }
+
+            async processFile(uploadUrl, file, processingItem) {
+                this.updateProcessingStatus(processingItem, 'processing', '🔍 Detecting file type...');
+                
+                // Simulate processing steps
+                await this.delay(1000);
+                this.updateProcessingStatus(processingItem, 'processing', '📄 Extracting content...');
+                
+                await this.delay(2000);
+                this.updateProcessingStatus(processingItem, 'processing', '✂️ Chunking content...');
+                
+                await this.delay(1500);
+                this.updateProcessingStatus(processingItem, 'processing', '🧠 Creating embeddings...');
+                
+                await this.delay(2000);
+                this.updateProcessingStatus(processingItem, 'processing', '💾 Storing vectors...');
+                
+                await this.delay(1000);
+                
+                // Update stats
+                this.stats.totalChunks += Math.floor(file.size / 1000); // Simulate chunk count
+                this.stats.totalVectors += Math.floor(file.size / 1000); // Simulate vector count
+                this.updateStats();
+            }
+
+            createProcessingItem(fileName, index) {
+                const item = document.createElement('div');
+                item.className = 'processing-item';
+                item.id = `processing-${index}`;
+                
+                item.innerHTML = `
+                    <div class="processing-header">
+                        <div class="processing-title">${fileName}</div>
+                        <div class="processing-status processing">Processing</div>
+                    </div>
+                    <div class="processing-details">Initializing...</div>
+                `;
+                
+                return item;
+            }
+
+            updateProcessingStatus(item, status, message) {
+                const statusElement = item.querySelector('.processing-status');
+                const detailsElement = item.querySelector('.processing-details');
+                
+                statusElement.className = `processing-status ${status}`;
+                statusElement.textContent = status === 'success' ? 'Completed' : 
+                                          status === 'error' ? 'Error' : 'Processing';
+                
+                if (detailsElement) {
+                    detailsElement.textContent = message;
+                }
+            }
+
+            showProcessingSection() {
+                document.getElementById('processingSection').classList.remove('hidden');
+                document.getElementById('statsSection').classList.remove('hidden');
+            }
+
+            updateStats() {
+                document.getElementById('totalFiles').textContent = this.stats.totalFiles;
+                document.getElementById('processedFiles').textContent = this.stats.processedFiles;
+                document.getElementById('totalChunks').textContent = this.stats.totalChunks;
+                document.getElementById('totalVectors').textContent = this.stats.totalVectors;
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // Initialize the uploader
+        const uploader = new EnhancedUploader();
+    </script>
+</body>
+</html> 

@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise RAG - Enhanced Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+            min-height: 600px;
+        }
+        
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px dashed #3498db;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-section.dragover {
+            border-color: #27ae60;
+            background: #e8f5e8;
+        }
+        
+        .upload-section.processing {
+            border-color: #f39c12;
+            background: #fef9e7;
+        }
+        
+        .upload-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            text-align: center;
+        }
+        
+        .upload-area {
+            border: 3px dashed #bdc3c7;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #3498db;
+            background: #ecf0f1;
+        }
+        
+        .upload-area.dragover {
+            border-color: #27ae60;
+            background: #e8f5e8;
+        }
+        
+        .upload-icon {
+            font-size: 4em;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .upload-hint {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .folder-input {
+            display: none;
+        }
+        
+        .upload-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn.success {
+            background: #27ae60;
+        }
+        
+        .btn.success:hover {
+            background: #229954;
+        }
+        
+        .btn.warning {
+            background: #f39c12;
+        }
+        
+        .btn.warning:hover {
+            background: #e67e22;
+        }
+        
+        .btn.danger {
+            background: #e74c3c;
+        }
+        
+        .btn.danger:hover {
+            background: #c0392b;
+        }
+        
+        .file-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-item.success {
+            border-left-color: #27ae60;
+        }
+        
+        .file-item.error {
+            border-left-color: #e74c3c;
+        }
+        
+        .file-item.processing {
+            border-left-color: #f39c12;
+        }
+        
+        .file-info {
+            flex: 1;
+        }
+        
+        .file-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .file-size {
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+        
+        .file-status {
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .file-status.success {
+            color: #27ae60;
+        }
+        
+        .file-status.error {
+            color: #e74c3c;
+        }
+        
+        .file-status.processing {
+            color: #f39c12;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #ecf0f1;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .chat-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .chat-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .chat-header h2 {
+            color: #2c3e50;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 400px;
+            border: 1px solid #ecf0f1;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        
+        .message.user {
+            background: #3498db;
+            color: white;
+            margin-left: auto;
+        }
+        
+        .message.assistant {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        
+        .message-time {
+            font-size: 0.7em;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 1em;
+            resize: none;
+            min-height: 50px;
+            max-height: 100px;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .send-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        
+        .send-btn:hover {
+            background: #229954;
+        }
+        
+        .send-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .stats-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #ecf0f1;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+        
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .warning {
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .supported-formats {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #ecf0f1;
+        }
+        
+        .format-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .format-item {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #2c3e50;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .upload-buttons {
+                flex-direction: column;
+            }
+            
+            .chat-input-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Enterprise RAG System</h1>
+            <p>Enhanced Multi-Modal Document Processing & Chat Interface</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <h2>📁 Document Upload</h2>
+                
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Drag & Drop Files Here</div>
+                    <div class="upload-hint">or click to browse files</div>
+                    <input type="file" id="fileInput" class="file-input" multiple accept=".pdf,.docx,.txt,.csv,.xlsx,.html,.rtf,.eml,.json,.png,.jpg,.jpeg,.bmp,.tiff,.mp3,.wav,.flac,.m4a,.mp4,.mov,.avi,.mkv">
+                    <input type="file" id="folderInput" class="folder-input" webkitdirectory directory multiple>
+                </div>
+                
+                <div class="upload-buttons">
+                    <button class="btn" onclick="document.getElementById('fileInput').click()">
+                        📄 Select Files
+                    </button>
+                    <button class="btn" onclick="document.getElementById('folderInput').click()">
+                        📂 Select Folder
+                    </button>
+                    <button class="btn success" onclick="processFiles()" id="processBtn" disabled>
+                        ⚡ Process Files
+                    </button>
+                    <button class="btn warning" onclick="cancelProcessing()" id="cancelBtn" style="display: none;">
+                        ❌ Cancel Processing
+                    </button>
+                    <button class="btn danger" onclick="clearFiles()" id="clearBtn">
+                        🗑️ Clear All
+                    </button>
+                </div>
+                
+                <div id="globalProgress" style="display: none; margin: 20px 0;">
+                    <h4>📊 Overall Progress</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="globalProgressFill" style="width: 0%"></div>
+                    </div>
+                    <div id="globalProgressText">Preparing upload...</div>
+                    <div id="globalProgressETA" style="font-size: 0.9em; color: #7f8c8d; margin-top: 5px;">ETA: Calculating...</div>
+                </div>
+                
+                <div class="file-list" id="fileList"></div>
+                
+                <div class="supported-formats">
+                    <h3>📋 Supported Formats</h3>
+                    <div class="format-grid">
+                        <div class="format-item">PDF</div>
+                        <div class="format-item">DOCX</div>
+                        <div class="format-item">TXT</div>
+                        <div class="format-item">CSV</div>
+                        <div class="format-item">XLSX</div>
+                        <div class="format-item">HTML</div>
+                        <div class="format-item">RTF</div>
+                        <div class="format-item">EML</div>
+                        <div class="format-item">JSON</div>
+                        <div class="format-item">PNG</div>
+                        <div class="format-item">JPG</div>
+                        <div class="format-item">MP3</div>
+                        <div class="format-item">WAV</div>
+                        <div class="format-item">MP4</div>
+                        <div class="format-item">MOV</div>
+                    </div>
+                </div>
+                
+                <div class="stats-section">
+                    <h3>📊 Processing Stats</h3>
+                    <div class="stats-grid" id="statsGrid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalFiles">0</div>
+                            <div class="stat-label">Total Files</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="processedFiles">0</div>
+                            <div class="stat-label">Processed</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalChunks">0</div>
+                            <div class="stat-label">Chunks Created</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="totalSize">0 MB</div>
+                            <div class="stat-label">Total Size</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Section -->
+            <div class="chat-section">
+                <div class="chat-header">
+                    <h2>💬 RAG Chat Interface</h2>
+                    <p>Ask questions about your uploaded documents</p>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message assistant">
+                        <div>Hello! I'm your RAG assistant. Upload some documents and I'll help you find information from them.</div>
+                        <div class="message-time" id="currentTime"></div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <textarea 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Ask a question about your documents..."
+                        rows="2"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://184.105.3.73:8000';
+        let uploadedFiles = [];
+        let isProcessing = false;
+        let processingResults = [];
+        let startTime = null;
+        let lastProgressTime = null;
+        let lastProgressValue = 0;
+        let currentAbortController = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            setupEventListeners();
+            restoreUploadState();
+            
+            // Warn user about page refresh during processing
+            window.addEventListener('beforeunload', function(e) {
+                if (isProcessing) {
+                    e.preventDefault();
+                    e.returnValue = '⚠️ Upload in progress! Refreshing will lose progress tracking.';
+                    return '⚠️ Upload in progress! Refreshing will lose progress tracking.';
+                }
+            });
+        });
+        
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+        }
+        
+        function setupEventListeners() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const folderInput = document.getElementById('folderInput');
+            const chatInput = document.getElementById('chatInput');
+            
+            // Drag and drop
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleDrop);
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            // File inputs
+            fileInput.addEventListener('change', handleFileSelect);
+            folderInput.addEventListener('change', handleFolderSelect);
+            
+            // Chat input
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            document.getElementById('uploadArea').classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.preventDefault();
+            document.getElementById('uploadArea').classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('uploadArea').classList.remove('dragover');
+            
+            const files = Array.from(e.dataTransfer.files);
+            addFiles(files);
+        }
+        
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+        }
+        
+        function handleFolderSelect(e) {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+        }
+        
+        function addFiles(files) {
+            const newFiles = files.filter(file => {
+                // Check if file is already in the list
+                return !uploadedFiles.some(existing => 
+                    existing.name === file.name && existing.size === file.size
+                );
+            });
+            
+            uploadedFiles = [...uploadedFiles, ...newFiles];
+            updateFileList();
+            updateStats();
+            updateProcessButton();
+        }
+        
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            
+            uploadedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)}</div>
+                    </div>
+                    <div class="file-status" id="status-${index}">Ready</div>
+                    <button class="btn danger" onclick="removeFile(${index})" style="margin-left: 10px;">×</button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            updateFileList();
+            updateStats();
+            updateProcessButton();
+        }
+        
+        function cancelProcessing() {
+            // Abort the current fetch request
+            if (currentAbortController) {
+                currentAbortController.abort();
+                currentAbortController = null;
+            }
+            
+            // Reset processing state
+            isProcessing = false;
+            document.getElementById('uploadSection').classList.remove('processing');
+            
+            // Hide cancel button, show process button
+            document.getElementById('cancelBtn').style.display = 'none';
+            document.getElementById('processBtn').style.display = 'inline-block';
+            updateProcessButton();
+            
+            // Hide global progress
+            document.getElementById('globalProgress').style.display = 'none';
+            
+            // Clear progress bars and reset file statuses
+            const fileItems = document.querySelectorAll('.file-item');
+            fileItems.forEach(item => {
+                const progressBar = item.querySelector('.progress-fill');
+                const status = item.querySelector('.file-status');
+                if (progressBar) progressBar.style.width = '0%';
+                if (status && status.textContent.includes('Processing')) {
+                    status.textContent = 'Cancelled';
+                    status.className = 'file-status error';
+                    item.classList.remove('processing');
+                    item.classList.add('error');
+                }
+            });
+            
+            // Clear session storage
+            sessionStorage.removeItem('ragUploadState');
+            
+            // Add cancellation message
+            addMessage('assistant', '❌ Upload processing was cancelled. You can try uploading again.');
+            
+            console.log('Processing cancelled by user');
+        }
+        
+        function clearFiles() {
+            uploadedFiles = [];
+            processingResults = [];
+            updateFileList();
+            updateStats();
+            updateProcessButton();
+            document.getElementById('uploadSection').classList.remove('processing');
+        }
+        
+        function updateStats() {
+            const totalSize = uploadedFiles.reduce((sum, file) => sum + file.size, 0);
+            const processedCount = processingResults.filter(r => r.status === 'success').length;
+            
+            document.getElementById('totalFiles').textContent = uploadedFiles.length;
+            document.getElementById('processedFiles').textContent = processedCount;
+            document.getElementById('totalChunks').textContent = processingResults.reduce((sum, r) => sum + (r.chunks || 0), 0);
+            document.getElementById('totalSize').textContent = formatFileSize(totalSize);
+        }
+        
+        function calculateETA(currentProgress, currentTime) {
+            if (!startTime || currentProgress === 0) {
+                return "Calculating...";
+            }
+            
+            const elapsed = (currentTime - startTime) / 1000; // seconds
+            
+            // Only calculate ETA if we have meaningful progress
+            if (currentProgress < 5) {
+                return "Calculating...";
+            }
+            
+            // Calculate ETA based on actual file processing estimates
+            const totalSize = uploadedFiles.reduce((sum, file) => sum + file.size, 0);
+            const totalSizeMB = totalSize / (1024 * 1024);
+            
+            // Calculate total expected processing time based on file types
+            let totalExpectedTime = 0;
+            uploadedFiles.forEach(file => {
+                const fileName = file.name.toLowerCase();
+                const fileSizeMB = file.size / (1024 * 1024);
+                
+                let processingRate = 0.5; // Default
+                if (fileName.includes('.pdf')) processingRate = 2.0;
+                else if (fileName.includes('.mp4') || fileName.includes('.mov') || fileName.includes('.avi')) processingRate = 3.0;
+                else if (fileName.includes('.png') || fileName.includes('.jpg') || fileName.includes('.jpeg')) processingRate = 1.5;
+                else if (fileName.includes('.json')) processingRate = 0.3;
+                else if (fileName.includes('.txt') || fileName.includes('.csv')) processingRate = 0.2;
+                
+                totalExpectedTime += fileSizeMB * processingRate;
+            });
+            
+            // Calculate progress rate based on expected vs actual time
+            const progressRate = currentProgress / elapsed;
+            const remainingProgress = 100 - currentProgress;
+            let etaSeconds = remainingProgress / progressRate;
+            
+            // If we have a realistic estimate, use it
+            if (totalExpectedTime > 0) {
+                const expectedRemainingTime = totalExpectedTime * (remainingProgress / 100);
+                etaSeconds = Math.min(etaSeconds, expectedRemainingTime);
+            }
+            
+            // Format ETA
+            if (etaSeconds > 3600) {
+                const hours = Math.floor(etaSeconds / 3600);
+                const minutes = Math.round((etaSeconds % 3600) / 60);
+                return `ETA: ${hours}h ${minutes}m`;
+            } else if (etaSeconds < 60) {
+                return `ETA: ${Math.round(etaSeconds)}s`;
+            } else {
+                const minutes = Math.floor(etaSeconds / 60);
+                const seconds = Math.round(etaSeconds % 60);
+                return `ETA: ${minutes}m ${seconds}s`;
+            }
+        }
+        
+        function saveUploadState() {
+            const state = {
+                uploadedFiles: uploadedFiles.map(file => ({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                })),
+                isProcessing: isProcessing,
+                processingResults: processingResults,
+                startTime: startTime,
+                lastProgressTime: lastProgressTime,
+                lastProgressValue: lastProgressValue
+            };
+            sessionStorage.setItem('ragUploadState', JSON.stringify(state));
+        }
+        
+        function restoreUploadState() {
+            const savedState = sessionStorage.getItem('ragUploadState');
+            if (savedState) {
+                try {
+                    const state = JSON.parse(savedState);
+                    
+                    // Restore processing state
+                    isProcessing = state.isProcessing || false;
+                    processingResults = state.processingResults || [];
+                    startTime = state.startTime || null;
+                    lastProgressTime = state.lastProgressTime || null;
+                    lastProgressValue = state.lastProgressValue || 0;
+                    
+                    // Show recovery message if processing was interrupted
+                    if (isProcessing) {
+                        addMessage('assistant', '⚠️ Upload session restored! Processing may have continued in the background. Check the progress bars below.');
+                        
+                        // Show global progress if processing
+                        const globalProgress = document.getElementById('globalProgress');
+                        if (globalProgress) {
+                            globalProgress.style.display = 'block';
+                            document.getElementById('globalProgressText').textContent = 'Processing resumed...';
+                            document.getElementById('globalProgressETA').textContent = 'ETA: Calculating...';
+                        }
+                    }
+                    
+                    // Update UI
+                    updateProcessButton();
+                    updateStats();
+                    
+                    // Clear old state after restoration
+                    sessionStorage.removeItem('ragUploadState');
+                    
+                } catch (error) {
+                    console.error('Error restoring upload state:', error);
+                    sessionStorage.removeItem('ragUploadState');
+                }
+            }
+        }
+        
+        function updateProcessButton() {
+            const processBtn = document.getElementById('processBtn');
+            processBtn.disabled = uploadedFiles.length === 0 || isProcessing;
+            processBtn.innerHTML = isProcessing ? '<span class="spinner"></span>Processing...' : '⚡ Process Files';
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        async function processFiles() {
+            if (uploadedFiles.length === 0 || isProcessing) return;
+            
+            isProcessing = true;
+            document.getElementById('uploadSection').classList.add('processing');
+            
+            // Show cancel button, hide process button
+            document.getElementById('cancelBtn').style.display = 'inline-block';
+            document.getElementById('processBtn').style.display = 'none';
+            updateProcessButton();
+            
+            // Save state before processing starts
+            saveUploadState();
+            
+            // Show global progress
+            const globalProgress = document.getElementById('globalProgress');
+            const globalProgressFill = document.getElementById('globalProgressFill');
+            const globalProgressText = document.getElementById('globalProgressText');
+            const globalProgressETA = document.getElementById('globalProgressETA');
+            globalProgress.style.display = 'block';
+            globalProgressFill.style.width = '0%';
+            globalProgressText.textContent = 'Starting upload...';
+            globalProgressETA.textContent = 'ETA: Calculating...';
+            
+            // Initialize timing
+            startTime = Date.now();
+            lastProgressTime = startTime;
+            lastProgressValue = 0;
+            
+            try {
+                const formData = new FormData();
+                uploadedFiles.forEach(file => {
+                    formData.append('files', file);
+                });
+                
+                // Update all files to processing status with progress bars
+                uploadedFiles.forEach((_, index) => {
+                    const statusElement = document.getElementById(`status-${index}`);
+                    if (statusElement) {
+                        statusElement.innerHTML = `
+                            <div>Processing...</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        `;
+                        statusElement.className = 'file-status processing';
+                    }
+                });
+                
+                // Real-time progress will be handled by SSE connection
+                // No need for simulated progress anymore
+                
+                // Create AbortController for cancellation
+                currentAbortController = new AbortController();
+                
+                // Show global progress immediately
+                globalProgress.style.display = 'block';
+                globalProgressFill.style.width = '0%';
+                globalProgressText.textContent = 'Starting upload...';
+                globalProgressETA.textContent = 'ETA: Calculating...';
+                
+                // Start real-time progress tracking
+                const response = await fetch(`${API_BASE}/ingest/realtime`, {
+                    method: 'POST',
+                    body: formData,
+                    signal: currentAbortController.signal
+                });
+                
+                const ingestResult = await response.json();
+                console.log('Ingest result:', ingestResult);
+                
+                if (response.ok && ingestResult.session_id) {
+                    console.log('Starting SSE connection for session:', ingestResult.session_id);
+                    // Start SSE connection for real-time progress
+                    const eventSource = new EventSource(`${API_BASE}/progress/${ingestResult.session_id}`);
+                    
+                    eventSource.onopen = function(event) {
+                        console.log('SSE connection opened');
+                    };
+                    
+                    eventSource.onmessage = function(event) {
+                        console.log('SSE message received:', event.data);
+                        const progressData = JSON.parse(event.data);
+                        
+                        if (progressData.error) {
+                            console.error('Progress error:', progressData.error);
+                            eventSource.close();
+                            return;
+                        }
+                        
+                        // Update global progress
+                        const totalProgress = (progressData.processed_files / progressData.total_files) * 100;
+                        globalProgressFill.style.width = Math.min(totalProgress, 100) + '%';
+                        globalProgressText.textContent = `Processing ${progressData.current_file}... ${Math.round(totalProgress)}%`;
+                        
+                        // Update individual file progress
+                        if (progressData.current_file) {
+                            const fileIndex = uploadedFiles.findIndex(f => f.name === progressData.current_file);
+                            if (fileIndex !== -1) {
+                                const statusElement = document.getElementById(`status-${fileIndex}`);
+                                if (statusElement) {
+                                    const progressFill = statusElement.querySelector('.progress-fill');
+                                    if (progressFill) {
+                                        progressFill.style.width = progressData.current_file_progress + '%';
+                                    }
+                                    
+                                    if (progressData.current_file_progress === 100) {
+                                        statusElement.innerHTML = `
+                                            <div>✅ Completed - ${progressData.total_chunks} chunks</div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" style="width: 100%"></div>
+                                            </div>
+                                        `;
+                                        statusElement.className = 'file-status success';
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Update ETA based on real progress
+                        if (progressData.elapsed_time > 0) {
+                            const avgTimePerFile = progressData.elapsed_time / Math.max(1, progressData.processed_files);
+                            const remainingFiles = progressData.total_files - progressData.processed_files;
+                            const etaSeconds = remainingFiles * avgTimePerFile;
+                            
+                            if (etaSeconds < 60) {
+                                globalProgressETA.textContent = `ETA: ${Math.round(etaSeconds)}s`;
+                            } else if (etaSeconds < 3600) {
+                                const minutes = Math.floor(etaSeconds / 60);
+                                const seconds = Math.round(etaSeconds % 60);
+                                globalProgressETA.textContent = `ETA: ${minutes}m ${seconds}s`;
+                            } else {
+                                const hours = Math.floor(etaSeconds / 3600);
+                                const minutes = Math.round((etaSeconds % 3600) / 60);
+                                globalProgressETA.textContent = `ETA: ${hours}h ${minutes}m`;
+                            }
+                        }
+                        
+                        // Check if processing is complete
+                        if (progressData.status === 'completed' || progressData.status === 'error') {
+                            eventSource.close();
+                            
+                            if (progressData.status === 'completed') {
+                                // Show completion message briefly
+                                globalProgressFill.style.width = '100%';
+                                globalProgressText.textContent = `✅ Completed! Processed ${progressData.total_files} files, created ${progressData.total_chunks} chunks`;
+                                globalProgressETA.textContent = 'Done';
+                                
+                                // Hide progress after 2 seconds
+                                setTimeout(() => {
+                                    globalProgress.style.display = 'none';
+                                }, 2000);
+                                
+                                addMessage('assistant', `✅ Successfully processed ${progressData.total_files} files! Created ${progressData.total_chunks} total chunks. You can now ask questions about your documents.`);
+                            } else {
+                                globalProgressText.textContent = '❌ Error during processing';
+                                globalProgressETA.textContent = 'Failed';
+                                
+                                // Hide progress after 2 seconds
+                                setTimeout(() => {
+                                    globalProgress.style.display = 'none';
+                                }, 2000);
+                                
+                                addMessage('assistant', `❌ Error during processing. Please try again.`);
+                            }
+                        }
+                    };
+                    
+                    eventSource.onerror = function(event) {
+                        console.error('SSE error:', event);
+                        eventSource.close();
+                    };
+                }
+                
+                // Real-time progress and completion handled by SSE connection
+                // No need for manual completion handling
+                
+            } catch (error) {
+                console.error('Processing error:', error);
+                
+                // Check if it was cancelled
+                if (error.name === 'AbortError') {
+                    console.log('Request was cancelled');
+                    return; // Don't show error message for cancellation
+                }
+                
+                addMessage('assistant', `❌ Error processing files: ${error.message}`);
+                
+                // Mark all files as error
+                uploadedFiles.forEach((_, index) => {
+                    const statusElement = document.getElementById(`status-${index}`);
+                    if (statusElement) {
+                        statusElement.innerHTML = `
+                            <div>❌ Error</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 100%; background: #e74c3c;"></div>
+                            </div>
+                        `;
+                        statusElement.className = 'file-status error';
+                    }
+                });
+            } finally {
+                isProcessing = false;
+                document.getElementById('uploadSection').classList.remove('processing');
+                
+                // Hide cancel button, show process button
+                document.getElementById('cancelBtn').style.display = 'none';
+                document.getElementById('processBtn').style.display = 'inline-block';
+                updateProcessButton();
+                
+                // Clear abort controller
+                currentAbortController = null;
+                
+                // Hide global progress on error too
+                document.getElementById('globalProgress').style.display = 'none';
+            }
+        }
+        
+        async function sendMessage() {
+            const chatInput = document.getElementById('chatInput');
+            const message = chatInput.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage('user', message);
+            chatInput.value = '';
+            
+            // Disable send button and show loading
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="spinner"></span>Sending...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: message,
+                        top_k: 5
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    let answer = data.answer;
+                    
+                    // Add source information if available
+                    if (data.sources && data.sources.length > 0) {
+                        answer += '\n\n📚 Sources:';
+                        data.sources.forEach((source, index) => {
+                            answer += `\n${index + 1}. ${source.title} (${source.file_type})`;
+                        });
+                    }
+                    
+                    addMessage('assistant', answer);
+                } else {
+                    addMessage('assistant', `❌ Error: ${data.detail || 'Failed to get response'}`);
+                }
+                
+            } catch (error) {
+                console.error('Chat error:', error);
+                addMessage('assistant', `❌ Error: ${error.message}`);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = 'Send';
+            }
+        }
+        
+        function addMessage(sender, content) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = new Date().toLocaleTimeString();
+            
+            messageDiv.innerHTML = content.replace(/\n/g, '<br>');
+            messageDiv.appendChild(timeDiv);
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    </script>
+</body>
+</html> 

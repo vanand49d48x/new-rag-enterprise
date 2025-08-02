@@ -35,14 +35,14 @@
         <h2>📁 Upload Documents</h2>
         <form id="uploadForm" enctype="multipart/form-data">
             <div class="file-input">
-                <input type="file" id="files" name="files" multiple accept=".pdf,.docx,.txt,.csv,.xlsx,.html,.rtf,.eml,.png,.jpg,.jpeg,.bmp,.tiff,.mp3,.wav,.flac,.m4a,.mp4,.mov,.avi,.mkv">
+                <input type="file" id="files" name="files" multiple accept=".pdf,.docx,.txt,.csv,.xlsx,.html,.rtf,.eml,.json,.png,.jpg,.jpeg,.bmp,.tiff,.mp3,.wav,.flac,.m4a,.mp4,.mov,.avi,.mkv">
             </div>
             <button type="submit" class="btn">Upload & Process</button>
         </form>
         
         <div class="supported-formats">
             <h4>Supported Formats:</h4>
-            <strong>Documents:</strong> PDF, DOCX, TXT, CSV, XLSX, HTML, RTF, EML<br>
+            <strong>Documents:</strong> PDF, DOCX, TXT, CSV, XLSX, HTML, RTF, EML, JSON<br>
             <strong>Images:</strong> PNG, JPG, JPEG, BMP, TIFF (with OCR)<br>
             <strong>Audio:</strong> MP3, WAV, FLAC, M4A<br>
             <strong>Video:</strong> MP4, MOV, AVI, MKV
@@ -89,24 +89,45 @@
             
             try {
                 console.log('Making request to /ingest');
-                const response = await fetch('/ingest', {
+                const response = await fetch('/ingest/realtime', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    // Add timeout for large files
+                    signal: AbortSignal.timeout(300000) // 5 minutes
                 });
                 
                 console.log('Response status:', response.status);
                 
-                const result = await response.json();
-                console.log('Response JSON:', result);
+                let result;
+                try {
+                    result = await response.json();
+                    console.log('Response JSON:', result);
+                } catch (jsonError) {
+                    console.error('Failed to parse JSON response:', jsonError);
+                    statusDiv.innerHTML = '<div class="status error">❌ Error: Invalid response from server</div>';
+                    return;
+                }
                 
                 if (response.ok) {
-                    statusDiv.innerHTML = '<div class="status success">✅ ' + result.message + '<br>Files processed: ' + result.details.length + '</div>';
+                    const detailsCount = result.details ? result.details.length : 0;
+                    statusDiv.innerHTML = '<div class="status success">✅ ' + result.message + '<br>Files processed: ' + detailsCount + '</div>';
                 } else {
-                    statusDiv.innerHTML = '<div class="status error">❌ Error: ' + result.detail + '</div>';
+                    statusDiv.innerHTML = '<div class="status error">❌ Error: ' + (result.detail || result.message || 'Unknown error') + '</div>';
                 }
             } catch (error) {
                 console.error('Error:', error);
-                statusDiv.innerHTML = '<div class="status error">❌ Error: ' + error.message + '</div>';
+                let errorMessage = error.message;
+                
+                // Provide more helpful error messages
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Upload timed out. Large files may take longer to process. Please try again or use smaller files.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Connection error. Please check if the server is running and try again.';
+                } else if (error.message.includes('Not Found')) {
+                    errorMessage = 'Server endpoint not found. Please refresh the page and try again.';
+                }
+                
+                statusDiv.innerHTML = '<div class="status error">❌ Error: ' + errorMessage + '</div>';
             }
         };
         
@@ -166,11 +187,13 @@
                                         sources = data.sources || [];
                                         answerDiv.innerHTML = '<strong>Assistant:</strong> <div class="status">Sources found, generating answer...</div>';
                                     } else if (data.type === 'token') {
-                                        answer += data.content;
+                                        answer += data.content || '';
                                         answerDiv.innerHTML = '<strong>Assistant:</strong> ' + answer + '<div class="status">Generating...</div>';
                                     } else if (data.type === 'done') {
                                         const sourcesHtml = sources.map(function(source) {
-                                            return '<li>' + source.title + ' (' + source.chunk_level + ')</li>';
+                                            const title = source.title || source.filename || 'Unknown';
+                                            const chunkLevel = source.chunk_level || 'unknown';
+                                            return '<li>' + title + ' (' + chunkLevel + ')</li>';
                                         }).join('');
                                         answerDiv.innerHTML = '<strong>Assistant:</strong> ' + answer + '<br><br><strong>Sources:</strong><ul>' + sourcesHtml + '</ul>';
                                         chatHistory.scrollTop = chatHistory.scrollHeight;

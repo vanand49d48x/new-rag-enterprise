@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Progress Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .progress-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Real-Time Progress Test</h1>
+        <p>This page tests the real-time progress tracking system.</p>
+        
+        <div class="progress-container">
+            <h3>📊 Progress Status</h3>
+            <div class="status" id="status">Ready to upload</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="eta">ETA: --</div>
+        </div>
+        
+        <div>
+            <input type="file" id="fileInput" accept=".txt,.pdf,.mov,.mp4,.jpg,.png">
+            <button onclick="testProgress()">Test Real-Time Progress</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div>
+            <h3>📝 Console Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://184.105.3.73:8000';
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        function updateProgress(progress, status, eta) {
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('status').textContent = status;
+            document.getElementById('eta').textContent = eta;
+        }
+        
+        async function testProgress() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                log('❌ Please select a file first');
+                return;
+            }
+            
+            log(`📁 Selected file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+            
+            const formData = new FormData();
+            formData.append('files', file);
+            
+            try {
+                log('🚀 Starting real-time upload...');
+                updateProgress(0, 'Starting upload...', 'ETA: Calculating...');
+                
+                const response = await fetch(`${API_BASE}/ingest/realtime`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                log(`✅ Upload started: ${JSON.stringify(result, null, 2)}`);
+                
+                if (result.session_id) {
+                    log(`🔗 Connecting to SSE stream: ${result.session_id}`);
+                    
+                    const eventSource = new EventSource(`${API_BASE}/progress/${result.session_id}`);
+                    
+                    eventSource.onopen = function(event) {
+                        log('✅ SSE connection opened');
+                    };
+                    
+                    eventSource.onmessage = function(event) {
+                        const data = JSON.parse(event.data);
+                        log(`📊 Progress update: ${JSON.stringify(data, null, 2)}`);
+                        
+                        if (data.current_file_progress !== undefined) {
+                            const progress = data.current_file_progress;
+                            const status = `Processing ${data.current_file}... ${progress}%`;
+                            const eta = data.elapsed_time ? `ETA: ${Math.round(data.elapsed_time)}s` : 'ETA: Calculating...';
+                            
+                            updateProgress(progress, status, eta);
+                        }
+                        
+                        if (data.status === 'completed') {
+                            log('🎉 Processing completed!');
+                            eventSource.close();
+                            updateProgress(100, `✅ Completed! Processed ${data.total_files} files, created ${data.total_chunks} chunks`, 'Done');
+                            
+                            // Keep the progress visible for 2 seconds
+                            setTimeout(() => {
+                                updateProgress(0, 'Ready to upload', 'ETA: --');
+                            }, 2000);
+                        }
+                    };
+                    
+                    eventSource.onerror = function(event) {
+                        log('❌ SSE connection error: ' + JSON.stringify(event));
+                        eventSource.close();
+                    };
+                    
+                } else {
+                    log('❌ No session ID received');
+                }
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        }
+        
+        // Auto-log page load
+        log('📱 Page loaded - Real-time progress test ready');
+    </script>
+</body>
+</html> 

@@ -1,6 +1,7 @@
 # Enterprise RAG System - Git Ignore
 
 # Models (large files - will be downloaded on deployment)
+models/
 models/*.gguf
 models/*.safetensors
 models/*.bin
@@ -36,6 +37,9 @@ env/
 ENV/
 env.bak/
 venv.bak/
+
+# Large test files
+large_test_file.txt
 
 # IDE
 .vscode/
@@ -113,7 +117,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Large data files
+# Large data files and directories
+data/uploads/
+data/processed/
+data/temp/
 data/large/
 *.csv
 *.json
@@ -139,4 +146,20 @@ weights/
 
 # System files
 .fuse_hidden*
-.nfs* 
+.nfs*
+
+# Test files and temporary data
+test_delete_file.txt
+test_*.py
+*_test.py
+
+# Docker and container files
+.dockerignore
+docker-compose.override.yml
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~ 

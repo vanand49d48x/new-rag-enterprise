@@ -1,101 +1,78 @@
-# Enterprise RAG System - Optimized Configuration
-# Single configuration file with all optimizations
-
-# =============================================================================
-# MODEL SELECTION - CONFIGURABLE FOR TESTING
-# =============================================================================
 model:
-  # Available models: qwen2.5-3b, qwen2-7b
-  # Change this to switch between models for testing
-  name: "qwen2.5-3b-instruct-q4_k_m.gguf"  # Options: qwen2.5-3b-instruct-q4_k_m.gguf, qwen2-7b-instruct-q4_k_m.gguf
-  type: "instruct"  # instruct, chat, base
-  size: "3b"        # 3b, 7b (auto-detected from model name)
-  
-  # Model-specific settings - Optimized for C7 (12 CPU, 30GB RAM)
-  context_size: 4096
-  max_tokens: 512    # Increased for better responses
+  name: tinyllama-1.1b-chat-v0.3.Q4_K_M.gguf
+  type: chat
+  size: 1.1b
+  context_size: 1024
+  max_tokens: 128
   temperature: 0.7
   top_p: 0.9
   top_k: 40
   repeat_penalty: 1.1
-  
-  # Model switching configuration
   available_models:
+    tinyllama:
+      name: tinyllama-1.1b-chat-v0.3.Q4_K_M.gguf
+      size: 1.1b
+      context_size: 2048
+      max_memory: 4GB
+      threads: 8
+      batch_size: 256
     qwen25_3b:
-      name: "qwen2.5-3b-instruct-q4_k_m.gguf"
-      size: "3b"
+      name: qwen2.5-3b-instruct-q4_k_m.gguf
+      size: 3b
       context_size: 4096
-      max_memory: "16GB"
+      max_memory: 16GB
       threads: 8
       batch_size: 512
     qwen2_7b:
-      name: "qwen2-7b-instruct-q4_k_m.gguf"
-      size: "7b"
+      name: qwen2-7b-instruct-q4_k_m.gguf
+      size: 7b
       context_size: 4096
-      max_memory: "24GB"
+      max_memory: 24GB
       threads: 12
       batch_size: 1024
-
-# =============================================================================
-# PERFORMANCE OPTIMIZATION
-# =============================================================================
 performance:
-  # CPU Optimization - Optimized for C7 (12 cores, 30GB RAM)
-  threads: 12          # Use all available cores
-  batch_size: 1024     # Increased for better throughput on C7
-  gpu_layers: 0        # CPU-only mode (C7 has no GPU)
-  
-  # Memory Optimization - Optimized for 30GB RAM
-  max_memory: "24GB"   # Increased from 16GB to utilize more RAM
+  threads: 8
+  batch_size: 256
+  gpu_layers: 0
+  max_memory: 24GB
   memory_efficient: true
   gradient_checkpointing: true
   activation_checkpointing: true
-  
-  # Linux-specific optimizations for C7
   omp_num_threads: 12
   mkl_num_threads: 12
   malloc_arena_max: 2
-  gomp_cpu_affinity: "0-11"
-  
-  # C7-specific optimizations
+  gomp_cpu_affinity: 0-11
   numa_aware: true
   cache_optimized: true
   prefetch_enabled: true
-
-# =============================================================================
-# QUANTIZATION (NF4)
-# =============================================================================
 quantization:
-  method: "nf4"
+  method: nf4
   bits: 4
   group_size: 128
   desc_act: true
-  
-  # NF4 specific settings
   nf4_quant:
     enabled: true
     bnb_4bit_use_double_quant: true
-    bnb_4bit_compute_dtype: "bfloat16"
-    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_compute_dtype: bfloat16
+    bnb_4bit_quant_type: nf4
     memory_efficient: true
-
-# =============================================================================
-# LoRA FINE-TUNING - ENABLED FOR TESTING
-# =============================================================================
 lora:
-  enabled: true        # ENABLED for advanced testing
-  base_model: "Qwen/Qwen2.5-3B-Instruct"
-  lora_model_path: "./models/lora/qwen25_lora"
-  
-  # LoRA parameters - Optimized for C7
+  enabled: true
+  base_model: Qwen/Qwen2.5-3B-Instruct
+  lora_model_path: ./models/lora/qwen25_lora
   r: 16
   lora_alpha: 32
-  target_modules: ["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+  target_modules:
+  - q_proj
+  - v_proj
+  - k_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
   lora_dropout: 0.05
-  bias: "none"
-  task_type: "CAUSAL_LM"
-  
-  # Training settings - Optimized for C7
+  bias: none
+  task_type: CAUSAL_LM
   learning_rate: 2e-4
   num_train_epochs: 3
   per_device_train_batch_size: 4
@@ -104,76 +81,42 @@ lora:
   logging_steps: 10
   save_steps: 500
   eval_steps: 500
-
-# =============================================================================
-# MoE (Mixture of Experts) - ENABLED FOR TESTING
-# =============================================================================
 moe:
-  enabled: true        # ENABLED for advanced testing
+  enabled: true
   num_experts: 8
   top_k: 2
   capacity_factor: 1.0
   aux_loss_weight: 0.01
-  
-  # MoE routing
-  router_type: "standard"
+  router_type: standard
   router_jitter: 0.0
   router_aux_loss_coef: 0.001
-
-# =============================================================================
-# ADVANCED OPTIMIZATIONS
-# =============================================================================
 advanced:
-  # Flash Attention
   use_flash_attention: true
-  
-  # Memory optimizations
   use_cache: true
-  torch_dtype: "bfloat16"
+  torch_dtype: bfloat16
   use_memory_efficient_attention: true
-  
-  # Parallel processing
   parallel_processing: true
   async_processing: true
   stream_processing: true
-  
-  # Work stealing for better load balancing
   enable_work_stealing: true
   thread_pool_size: 12
-
-# =============================================================================
-# SYSTEM DEPLOYMENT
-# =============================================================================
 deployment:
-  # Docker settings
-  platform: "linux/amd64"
-  restart_policy: "unless-stopped"
-  
-  # Service ports
+  platform: linux/amd64
+  restart_policy: unless-stopped
   backend_port: 8000
   llm_port: 8080
   qdrant_port: 6334
   grafana_port: 3000
   prometheus_port: 9090
-  
-  # Health checks
   health_check_interval: 30s
   health_check_timeout: 10s
   health_check_retries: 3
-
-# =============================================================================
-# MONITORING & LOGGING
-# =============================================================================
 monitoring:
   enabled: true
   prometheus: true
   grafana: true
-  
-  # Metrics collection
   collect_performance_metrics: true
   collect_memory_metrics: true
   collect_cpu_metrics: true
-  
-  # Logging
-  log_level: "INFO"
-  log_format: "json" 
+  log_level: INFO
+  log_format: json

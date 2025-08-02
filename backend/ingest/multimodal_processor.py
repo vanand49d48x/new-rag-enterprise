@@ -13,6 +13,15 @@ from typing import List, Dict, Any, Optional, Tuple
 import mimetypes
 import magic
 
+# PIL compatibility patch for EasyOCR
+try:
+    from PIL import Image, ImageOps
+    # Patch for deprecated ANTIALIAS attribute
+    if not hasattr(Image, 'ANTIALIAS'):
+        Image.ANTIALIAS = Image.Resampling.LANCZOS
+except ImportError:
+    pass
+
 # Document processing
 from PyPDF2 import PdfReader
 from docx import Document as DocxDocument
@@ -25,7 +34,7 @@ from striprtf.striprtf import rtf_to_text
 # Image processing
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 import easyocr
 import pytesseract
 
@@ -38,360 +47,382 @@ from moviepy.editor import VideoFileClip
 
 # Text processing
 import re
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.text_splitter import MarkdownHeaderTextSplitter
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+from backend.utils.logging_config import get_logger
+
+# Use centralized logging
+logger = get_logger(__name__)
+
+import os
+import logging
+import subprocess
+import tempfile
+from typing import List, Optional, Dict, Any
+from pathlib import Path
+
+import torch
+from PIL import Image
+import numpy as np
+
+# Optional imports for different modalities
+try:
+    from transformers import CLIPProcessor, CLIPModel, pipeline
+    CLIP_AVAILABLE = True
+except ImportError:
+    CLIP_AVAILABLE = False
+    logging.warning("CLIP not available. Image processing will be limited.")
+
+try:
+    import whisper
+    WHISPER_AVAILABLE = True
+except ImportError:
+    WHISPER_AVAILABLE = False
+    logging.warning("Whisper not available. Audio processing will be limited.")
+
+try:
+    import cv2
+    OPENCV_AVAILABLE = True
+except ImportError:
+    OPENCV_AVAILABLE = False
+    logging.warning("OpenCV not available. Video processing will be limited.")
+
 logger = logging.getLogger(__name__)
 
-class EnterpriseMultimodalProcessor:
+class MultimodalProcessor:
     """
-    Enterprise-grade multi-modal document processor with hierarchical chunking
+    Processor for multimodal content including images, audio, and video files.
+    Supports:
+    - Image analysis and captioning
+    - Audio transcription
+    - Video processing (audio extraction + transcription)
     """
     
     def __init__(self):
-        self.ocr_reader = easyocr.Reader(['en'])
-        self.whisper_model = whisper.load_model("base")
-        self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=400,
-            chunk_overlap=50,
-            length_function=len,
-            separators=["\n\n", "\n", ". ", "! ", "? ", " ", ""]
-        )
+        self.config = self._load_config()
+        self._initialize_models()
+    
+    def _load_config(self) -> Dict[str, Any]:
+        """Load configuration for multimodal processing"""
+        return {
+            "image": {
+                "max_size": (224, 224),
+                "supported_formats": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"],
+                "caption_model": "microsoft/DialoGPT-medium" if not CLIP_AVAILABLE else None,
+                "clip_model": "openai/clip-vit-base-patch32" if CLIP_AVAILABLE else None
+            },
+            "audio": {
+                "supported_formats": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a"],
+                "whisper_model": "base" if WHISPER_AVAILABLE else None,
+                "max_duration": 300,  # 5 minutes max
+                "sample_rate": 16000
+            },
+            "video": {
+                "supported_formats": [".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv"],
+                "audio_codec": "pcm_s16le",
+                "video_codec": "libx264"
+            }
+        }
+    
+    def _initialize_models(self):
+        """Initialize models for different modalities"""
+        self.models = {}
         
-    def process_file(self, file_bytes: bytes, filename: str, doc_type: str = "uploaded") -> List[Dict[str, Any]]:
+        # Initialize CLIP for image processing
+        if CLIP_AVAILABLE and self.config["image"]["clip_model"]:
+            try:
+                self.models["clip"] = {
+                    "model": CLIPModel.from_pretrained(self.config["image"]["clip_model"]),
+                    "processor": CLIPProcessor.from_pretrained(self.config["image"]["clip_model"])
+                }
+                logger.info("CLIP model loaded successfully")
+            except Exception as e:
+                logger.error(f"Failed to load CLIP model: {e}")
+        
+        # Initialize Whisper for audio processing
+        if WHISPER_AVAILABLE and self.config["audio"]["whisper_model"]:
+            try:
+                self.models["whisper"] = whisper.load_model(self.config["audio"]["whisper_model"])
+                logger.info("Whisper model loaded successfully")
+            except Exception as e:
+                logger.error(f"Failed to load Whisper model: {e}")
+        
+        # Initialize captioning model
+        if self.config["image"]["caption_model"]:
+            try:
+                self.models["caption"] = pipeline("text-generation", model=self.config["image"]["caption_model"])
+                logger.info("Caption model loaded successfully")
+            except Exception as e:
+                logger.error(f"Failed to load caption model: {e}")
+    
+    def process_image(self, image_path: str) -> Dict[str, Any]:
         """
-        Main entry point for processing any file type
+        Process an image file and extract features/captions
+        
+        Args:
+            image_path: Path to the image file
+            
+        Returns:
+            Dictionary containing image features and metadata
         """
         try:
-            # Detect file type
-            file_type = self._detect_file_type(file_bytes, filename)
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f"Image file not found: {image_path}")
             
-            # Extract content based on file type
-            if file_type in ["pdf", "docx", "txt", "csv", "xlsx", "html", "rtf", "eml"]:
-                content = self._extract_text_from_document(file_bytes, file_type)
-            elif file_type in ["png", "jpg", "jpeg", "bmp", "tiff"]:
-                content = self._extract_text_from_image(file_bytes)
-            elif file_type in ["mp3", "wav", "flac", "m4a"]:
-                content = self._extract_text_from_audio(file_bytes)
-            elif file_type in ["mp4", "mov", "avi", "mkv"]:
-                content = self._extract_text_from_video(file_bytes)
-            else:
-                raise ValueError(f"Unsupported file type: {file_type}")
+            # Load and preprocess image
+            image = Image.open(image_path).convert('RGB')
+            image = image.resize(self.config["image"]["max_size"])
             
-            # Process with hierarchical chunking
-            return self._process_with_hierarchical_chunking(
-                content=content,
-                filename=filename,
-                file_type=file_type,
-                doc_type=doc_type
-            )
+            result = {
+                "file_path": image_path,
+                "file_size": os.path.getsize(image_path),
+                "dimensions": image.size,
+                "format": image.format,
+                "features": None,
+                "caption": None,
+                "metadata": {}
+            }
+            
+            # Extract CLIP features if available
+            if "clip" in self.models:
+                try:
+                    inputs = self.models["clip"]["processor"](
+                        images=image, 
+                        return_tensors="pt"
+                    )
+                    with torch.no_grad():
+                        image_features = self.models["clip"]["model"].get_image_features(**inputs)
+                    result["features"] = image_features.numpy().tolist()
+                    logger.info(f"Extracted CLIP features for {image_path}")
+                except Exception as e:
+                    logger.error(f"Failed to extract CLIP features: {e}")
+            
+            # Generate caption if available
+            if "caption" in self.models:
+                try:
+                    # Simple caption generation (can be enhanced)
+                    caption = self._generate_image_caption(image)
+                    result["caption"] = caption
+                    logger.info(f"Generated caption for {image_path}: {caption}")
+                except Exception as e:
+                    logger.error(f"Failed to generate caption: {e}")
+            
+            return result
             
         except Exception as e:
-            logger.error(f"Error processing file {filename}: {str(e)}")
+            logger.error(f"Error processing image {image_path}: {e}")
             raise
     
-    def _detect_file_type(self, file_bytes: bytes, filename: str) -> str:
-        """Detect file type using both magic numbers and extension"""
-        # Use python-magic for MIME type detection
-        mime_type = magic.from_buffer(file_bytes, mime=True)
-        
-        # Map MIME types to file extensions
-        mime_to_ext = {
-            'application/pdf': 'pdf',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-            'text/plain': 'txt',
-            'text/csv': 'csv',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
-            'text/html': 'html',
-            'text/rtf': 'rtf',
-            'message/rfc822': 'eml',
-            'image/png': 'png',
-            'image/jpeg': 'jpg',
-            'image/bmp': 'bmp',
-            'image/tiff': 'tiff',
-            'audio/mpeg': 'mp3',
-            'audio/wav': 'wav',
-            'audio/flac': 'flac',
-            'audio/mp4': 'm4a',
-            'video/mp4': 'mp4',
-            'video/quicktime': 'mov',
-            'video/x-msvideo': 'avi',
-            'video/x-matroska': 'mkv'
-        }
-        
-        detected_type = mime_to_ext.get(mime_type)
-        if detected_type:
-            return detected_type
-        
-        # Fallback to file extension
-        ext = filename.lower().split(".")[-1]
-        return ext
-    
-    def _extract_text_from_document(self, file_bytes: bytes, file_type: str) -> str:
-        """Extract text from various document formats"""
-        try:
-            if file_type == "pdf":
-                reader = PdfReader(io.BytesIO(file_bytes))
-                content = "\n\n".join([page.extract_text() for page in reader.pages if page.extract_text()])
-                
-            elif file_type in ["docx", "doc"]:
-                doc = DocxDocument(io.BytesIO(file_bytes))
-                content = "\n\n".join([para.text for para in doc.paragraphs if para.text.strip()])
-                
-            elif file_type == "csv":
-                decoded = file_bytes.decode("utf-8")
-                csv_reader = csv.reader(io.StringIO(decoded))
-                content = "\n".join([", ".join(row) for row in csv_reader])
-                
-            elif file_type == "xlsx":
-                workbook = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True)
-                sheet_text = []
-                for sheet in workbook.worksheets:
-                    for row in sheet.iter_rows(values_only=True):
-                        sheet_text.append(", ".join([str(cell) if cell is not None else "" for cell in row]))
-                content = "\n".join(sheet_text)
-                
-            elif file_type in ["html", "htm"]:
-                html = file_bytes.decode("utf-8")
-                soup = BeautifulSoup(html, "html.parser")
-                content = soup.get_text(separator="\n")
-                
-            elif file_type == "rtf":
-                rtf = file_bytes.decode("utf-8")
-                content = rtf_to_text(rtf)
-                
-            elif file_type == "eml":
-                msg = email.message_from_bytes(file_bytes)
-                content = ""
-                if msg.is_multipart():
-                    for part in msg.walk():
-                        if part.get_content_type() == "text/plain":
-                            content += part.get_payload(decode=True).decode("utf-8")
-                else:
-                    content = msg.get_payload(decode=True).decode("utf-8")
-                    
-            else:  # txt and other text files
-                content = file_bytes.decode("utf-8")
-                
-            return content.strip()
-            
-        except Exception as e:
-            logger.error(f"Error extracting text from {file_type}: {str(e)}")
-            return f"[Error extracting text from {file_type} file]"
-    
-    def _extract_text_from_image(self, file_bytes: bytes) -> str:
-        """Extract text from images using OCR"""
-        try:
-            # Convert bytes to PIL Image
-            image = Image.open(io.BytesIO(file_bytes))
-            
-            # Convert to OpenCV format for better OCR
-            cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-            
-            # Try EasyOCR first (better for complex layouts)
+    def _generate_image_caption(self, image: Image.Image) -> str:
+        """Generate a caption for an image"""
+        # This is a simple implementation - can be enhanced with better models
+        if "caption" in self.models:
             try:
-                results = self.ocr_reader.readtext(cv_image)
-                text = " ".join([result[1] for result in results])
-                if text.strip():
-                    return text
+                # Simple prompt-based captioning
+                prompt = "This image shows:"
+                result = self.models["caption"](prompt, max_length=50, num_return_sequences=1)
+                caption = result[0]["generated_text"].replace(prompt, "").strip()
+                return caption if caption else "An image"
             except Exception as e:
-                logger.warning(f"EasyOCR failed: {e}")
-            
-            # Fallback to Tesseract
-            try:
-                text = pytesseract.image_to_string(image)
-                return text.strip()
-            except Exception as e:
-                logger.warning(f"Tesseract failed: {e}")
-            
-            return "[No text extracted from image]"
-            
-        except Exception as e:
-            logger.error(f"Error extracting text from image: {str(e)}")
-            return "[Error extracting text from image]"
-    
-    def _extract_text_from_audio(self, file_bytes: bytes) -> str:
-        """Extract text from audio using Whisper"""
-        try:
-            # Save temporary audio file
-            temp_path = f"/tmp/audio_{hashlib.md5(file_bytes).hexdigest()}.wav"
-            with open(temp_path, "wb") as f:
-                f.write(file_bytes)
-            
-            # Transcribe audio using Whisper
-            result = self.whisper_model.transcribe(temp_path)
-            audio_text = result["text"]
-            
-            # Clean up
-            os.remove(temp_path)
-            
-            return audio_text.strip() if audio_text.strip() else "[No speech detected in audio]"
-            
-        except Exception as e:
-            logger.error(f"Error extracting text from audio: {str(e)}")
-            return f"[Error extracting text from audio: {str(e)}]"
-    
-    def _extract_text_from_video(self, file_bytes: bytes) -> str:
-        """Extract text from video (audio + OCR on frames)"""
-        try:
-            # Save temporary file
-            temp_path = f"/tmp/video_{hashlib.md5(file_bytes).hexdigest()}.mp4"
-            with open(temp_path, "wb") as f:
-                f.write(file_bytes)
-            
-            # Extract audio and transcribe
-            video = VideoFileClip(temp_path)
-            audio_path = temp_path.replace(".mp4", "_audio.wav")
-            video.audio.write_audiofile(audio_path, verbose=False, logger=None)
-            
-            # Transcribe audio using Whisper
-            result = self.whisper_model.transcribe(audio_path)
-            audio_text = result["text"]
-            
-            # Extract frames for OCR (every 5 seconds)
-            frame_texts = []
-            fps = video.fps
-            frame_interval = int(fps * 5)  # Every 5 seconds
-            
-            for i, frame in enumerate(video.iter_frames()):
-                if i % frame_interval == 0:
-                    # Convert frame to PIL Image
-                    frame_pil = Image.fromarray(frame)
-                    
-                    # OCR on frame
-                    try:
-                        frame_text = pytesseract.image_to_string(frame_pil)
-                        if frame_text.strip():
-                            frame_texts.append(f"[Frame {i//frame_interval}]: {frame_text.strip()}")
-                    except:
-                        pass
-            
-            # Combine audio and visual text
-            combined_text = f"Audio Transcription: {audio_text}\n\nVisual Text:\n" + "\n".join(frame_texts)
-            
-            # Clean up
-            video.close()
-            os.remove(temp_path)
-            os.remove(audio_path)
-            
-            return combined_text.strip()
-            
-        except Exception as e:
-            logger.error(f"Error extracting text from video: {str(e)}")
-            return "[Error extracting text from video]"
-    
-    def _process_with_hierarchical_chunking(self, content: str, filename: str, file_type: str, doc_type: str) -> List[Dict[str, Any]]:
-        """
-        Implement hierarchical chunking strategy for enterprise documents
-        Level 1: Document-level metadata
-        Level 2: Section-level chunks (if applicable)
-        Level 3: Paragraph-level chunks
-        Level 4: Sentence-level for precise retrieval
-        """
-        created = datetime.utcnow()
-        file_hash = hashlib.md5(content.encode()).hexdigest()
+                logger.error(f"Caption generation failed: {e}")
         
-        # Level 1: Document-level metadata
-        doc_metadata = {
-            "title": filename,
-            "file_type": file_type,
-            "doc_type": doc_type,
-            "created": created.isoformat(),
-            "file_hash": file_hash,
-            "content_length": len(content),
-            "chunk_level": "document"
+        # Fallback caption
+        return "An image"
+    
+    def generate_caption(self, image_path: str) -> str:
+        """
+        Generate a caption for an image file
+        
+        Args:
+            image_path: Path to the image file
+            
+        Returns:
+            Generated caption string
+        """
+        try:
+            image = Image.open(image_path).convert('RGB')
+            return self._generate_image_caption(image)
+        except Exception as e:
+            logger.error(f"Error generating caption for {image_path}: {e}")
+            return "An image"
+    
+    def transcribe_audio(self, audio_path: str) -> str:
+        """
+        Transcribe an audio file using Whisper
+        
+        Args:
+            audio_path: Path to the audio file
+            
+        Returns:
+            Transcribed text
+        """
+        try:
+            if not os.path.exists(audio_path):
+                raise FileNotFoundError(f"Audio file not found: {audio_path}")
+            
+            if not WHISPER_AVAILABLE:
+                raise RuntimeError("Whisper not available for audio transcription")
+            
+            if "whisper" not in self.models:
+                raise RuntimeError("Whisper model not loaded")
+            
+            # Transcribe audio
+            result = self.models["whisper"].transcribe(audio_path)
+            transcript = result["text"].strip()
+            
+            logger.info(f"Transcribed audio {audio_path}: {len(transcript)} characters")
+            return transcript
+            
+        except Exception as e:
+            logger.error(f"Error transcribing audio {audio_path}: {e}")
+            raise
+    
+    def extract_audio_from_video(self, video_path: str) -> str:
+        """
+        Extract audio from a video file using ffmpeg
+        
+        Args:
+            video_path: Path to the video file
+            
+        Returns:
+            Path to the extracted audio file
+        """
+        try:
+            if not os.path.exists(video_path):
+                raise FileNotFoundError(f"Video file not found: {video_path}")
+            
+            # Create temporary file for audio
+            temp_audio = tempfile.NamedTemporaryFile(
+                suffix=".wav", 
+                delete=False
+            )
+            temp_audio_path = temp_audio.name
+            temp_audio.close()
+            
+            # Extract audio using ffmpeg
+            cmd = [
+                "ffmpeg",
+                "-i", video_path,
+                "-vn",  # No video
+                "-acodec", self.config["video"]["audio_codec"],
+                "-ar", str(self.config["audio"]["sample_rate"]),
+                "-ac", "1",  # Mono
+                "-y",  # Overwrite output
+                temp_audio_path
+            ]
+            
+            result = subprocess.run(
+                cmd, 
+                capture_output=True, 
+                text=True, 
+                timeout=300  # 5 minutes timeout
+            )
+            
+            if result.returncode != 0:
+                raise RuntimeError(f"FFmpeg failed: {result.stderr}")
+            
+            logger.info(f"Extracted audio from {video_path} to {temp_audio_path}")
+            return temp_audio_path
+            
+        except Exception as e:
+            logger.error(f"Error extracting audio from video {video_path}: {e}")
+            raise
+    
+    def process_video(self, video_path: str) -> Dict[str, Any]:
+        """
+        Process a video file by extracting audio and transcribing it
+        
+        Args:
+            video_path: Path to the video file
+            
+        Returns:
+            Dictionary containing video metadata and transcript
+        """
+        try:
+            if not os.path.exists(video_path):
+                raise FileNotFoundError(f"Video file not found: {video_path}")
+            
+            result = {
+                "file_path": video_path,
+                "file_size": os.path.getsize(video_path),
+                "audio_path": None,
+                "transcript": None,
+                "metadata": {}
+            }
+            
+            # Extract audio
+            audio_path = self.extract_audio_from_video(video_path)
+            result["audio_path"] = audio_path
+            
+            # Transcribe audio
+            transcript = self.transcribe_audio(audio_path)
+            result["transcript"] = transcript
+            
+            # Clean up temporary audio file
+            if os.path.exists(audio_path):
+                os.remove(audio_path)
+            
+            logger.info(f"Processed video {video_path}: {len(transcript)} characters transcribed")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error processing video {video_path}: {e}")
+            raise
+    
+    def get_supported_formats(self) -> Dict[str, List[str]]:
+        """Get list of supported file formats for each modality"""
+        return {
+            "image": self.config["image"]["supported_formats"],
+            "audio": self.config["audio"]["supported_formats"],
+            "video": self.config["video"]["supported_formats"]
         }
-        
-        # Level 2: Section-level chunks (for structured documents)
-        section_chunks = self._extract_sections(content, filename, file_type)
-        
-        # Level 3: Paragraph-level chunks
-        paragraph_chunks = self.text_splitter.split_text(content)
-        
-        # Level 4: Sentence-level chunks for precise retrieval
-        sentence_chunks = self._split_into_sentences(content)
-        
-        # Combine all chunks with appropriate metadata
-        all_chunks = []
-        
-        # Add document-level chunk
-        all_chunks.append({
-            "id": f"{filename}-doc-{file_hash}",
-            "text": content[:1000] + "..." if len(content) > 1000 else content,  # Truncated for document-level
-            "metadata": {**doc_metadata, "chunk_type": "document_summary"}
-        })
-        
-        # Add section chunks
-        for i, section in enumerate(section_chunks):
-            all_chunks.append({
-                "id": f"{filename}-section-{i}-{file_hash}",
-                "text": section["text"],
-                "metadata": {
-                    **doc_metadata,
-                    "chunk_type": "section",
-                    "section_title": section.get("title", ""),
-                    "section_index": i,
-                    "chunk_level": "section"
-                }
-            })
-        
-        # Add paragraph chunks
-        for i, chunk in enumerate(paragraph_chunks):
-            all_chunks.append({
-                "id": f"{filename}-para-{i}-{file_hash}",
-                "text": chunk,
-                "metadata": {
-                    **doc_metadata,
-                    "chunk_type": "paragraph",
-                    "paragraph_index": i,
-                    "chunk_level": "paragraph"
-                }
-            })
-        
-        # Add sentence chunks (for high-precision retrieval)
-        for i, sentence in enumerate(sentence_chunks):
-            if len(sentence.strip()) > 10:  # Only meaningful sentences
-                all_chunks.append({
-                    "id": f"{filename}-sent-{i}-{file_hash}",
-                    "text": sentence,
-                    "metadata": {
-                        **doc_metadata,
-                        "chunk_type": "sentence",
-                        "sentence_index": i,
-                        "chunk_level": "sentence"
-                    }
-                })
-        
-        return all_chunks
     
-    def _extract_sections(self, content: str, filename: str, file_type: str) -> List[Dict[str, str]]:
-        """Extract sections from structured documents"""
-        sections = []
+    def is_supported_format(self, file_path: str) -> bool:
+        """Check if a file format is supported"""
+        ext = Path(file_path).suffix.lower()
         
-        if file_type == "pdf":
-            # Try to extract sections based on common patterns
-            lines = content.split('\n')
-            current_section = {"title": "Introduction", "text": ""}
-            
-            for line in lines:
-                # Detect section headers (all caps, numbered, etc.)
-                if (line.isupper() and len(line.strip()) > 3) or \
-                   re.match(r'^\d+\.\s+[A-Z]', line.strip()):
-                    if current_section["text"].strip():
-                        sections.append(current_section)
-                    current_section = {"title": line.strip(), "text": ""}
-                else:
-                    current_section["text"] += line + "\n"
-            
-            if current_section["text"].strip():
-                sections.append(current_section)
+        for formats in self.get_supported_formats().values():
+            if ext in formats:
+                return True
         
-        return sections
+        return False
     
-    def _split_into_sentences(self, text: str) -> List[str]:
-        """Split text into sentences for precise retrieval"""
-        # Simple sentence splitting - can be enhanced with NLTK
-        sentences = re.split(r'[.!?]+', text)
-        return [s.strip() for s in sentences if s.strip() and len(s.strip()) > 10] 
+    def get_file_info(self, file_path: str) -> Dict[str, Any]:
+        """Get basic information about a file"""
+        try:
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"File not found: {file_path}")
+            
+            stat = os.stat(file_path)
+            ext = Path(file_path).suffix.lower()
+            
+            info = {
+                "file_path": file_path,
+                "file_name": os.path.basename(file_path),
+                "file_size": stat.st_size,
+                "extension": ext,
+                "is_supported": self.is_supported_format(file_path),
+                "modality": self._detect_modality(ext)
+            }
+            
+            return info
+            
+        except Exception as e:
+            logger.error(f"Error getting file info for {file_path}: {e}")
+            raise
+    
+    def _detect_modality(self, extension: str) -> str:
+        """Detect the modality of a file based on its extension"""
+        if extension in self.config["image"]["supported_formats"]:
+            return "image"
+        elif extension in self.config["audio"]["supported_formats"]:
+            return "audio"
+        elif extension in self.config["video"]["supported_formats"]:
+            return "video"
+        else:
+            return "unknown"
+    
+    def cleanup(self):
+        """Clean up resources"""
+        # Clear model references to free memory
+        self.models.clear()
+        logger.info("Multimodal processor cleaned up") 

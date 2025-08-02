@@ -1,8 +1,14 @@
 #!/bin/bash
 # Enterprise RAG System - Unified Startup Script
-# Uses single config.yaml for all settings
+# Usage: ./start.sh [model_name]
+# Examples: ./start.sh tinyllama
+#          ./start.sh qwen25_3b
+#          ./start.sh qwen2_7b
 
 set -e
+
+# Available models
+AVAILABLE_MODELS=("tinyllama" "qwen25_3b" "qwen2_7b")
 
 # Colors for output
 RED='\033[0;31m'
@@ -32,7 +38,55 @@ detect_system() {
         exit 1
     fi
     
+    # Set environment variables for backend tier detection
+    export HOST_RAM_GB=$TOTAL_MEM
+    export HOST_CPU_COUNT=$CPU_CORES
+    
     echo -e "${GREEN}✅ OS: $OS, Cores: $CPU_CORES, Memory: ${TOTAL_MEM}GB${NC}"
+    echo -e "${GREEN}✅ Environment variables set: HOST_RAM_GB=$TOTAL_MEM, HOST_CPU_COUNT=$CPU_CORES${NC}"
+}
+
+# Function to handle model selection
+handle_model_selection() {
+    local MODEL_CHOICE="$1"
+    
+    # If no model specified, show menu
+    if [ -z "$MODEL_CHOICE" ]; then
+        echo -e "${BLUE}🤖 Available Models:${NC}"
+        echo "1) tinyllama   - TinyLlama-1.1B (Fastest)"
+        echo "2) qwen25_3b   - Qwen2.5-3B (Balanced)"
+        echo "3) qwen2_7b    - Qwen2-7B (Highest Quality)"
+        echo ""
+        read -p "Enter model name (or number 1-3): " MODEL_CHOICE
+        
+        # Convert number to model name
+        case $MODEL_CHOICE in
+            1) MODEL_CHOICE="tinyllama" ;;
+            2) MODEL_CHOICE="qwen25_3b" ;;
+            3) MODEL_CHOICE="qwen2_7b" ;;
+        esac
+    fi
+    
+    # Validate model
+    if [[ ! " ${AVAILABLE_MODELS[@]} " =~ " ${MODEL_CHOICE} " ]]; then
+        echo -e "${RED}❌ Invalid model: $MODEL_CHOICE${NC}"
+        echo "Available models: ${AVAILABLE_MODELS[*]}"
+        exit 1
+    fi
+    
+    echo -e "${BLUE}🔄 Switching to model: $MODEL_CHOICE${NC}"
+    
+    # Activate virtual environment and switch model
+    if [ -d "venv" ]; then
+        source venv/bin/activate
+        ./switch_model.sh "$MODEL_CHOICE"
+    else
+        echo -e "${YELLOW}⚠️  Virtual environment not found. Creating one...${NC}"
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install pyyaml
+        ./switch_model.sh "$MODEL_CHOICE"
+    fi
 }
 
 # Function to check dependencies
@@ -102,6 +156,10 @@ REPEAT_PENALTY=1.1
 TEMP=0.7
 TOP_P=0.9
 TOP_K=40
+
+# System information for tier detection
+HOST_RAM_GB=$TOTAL_MEM
+HOST_CPU_COUNT=$CPU_CORES
 
 # System optimizations
 OMP_NUM_THREADS=$THREADS
@@ -209,6 +267,10 @@ print('Enabled' if config['moe']['enabled'] else 'Disabled')
 main() {
     detect_system
     check_dependencies
+    
+    # Handle model selection
+    handle_model_selection "$1"
+    
     generate_env_from_config
     
     # Check if model exists
@@ -224,9 +286,10 @@ print(config['model']['name'])
         wait_and_status
         show_config_summary
         echo -e "${GREEN}🎉 Enterprise RAG System is ready!${NC}"
+        echo -e "${BLUE}💡 Access your RAG system at: http://localhost:8000${NC}"
     else
         echo -e "${YELLOW}⚠️  Please download the required model and run again.${NC}"
-        echo -e "${BLUE}💡 To change model, edit config.yaml and run: ./start.sh${NC}"
+        echo -e "${BLUE}💡 To change model, run: ./start.sh [model_name]${NC}"
     fi
 }
 

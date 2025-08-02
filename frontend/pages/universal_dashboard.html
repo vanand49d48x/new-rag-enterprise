@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Enterprise RAG - Universal Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/tus-js-client@3.1.2/dist/tus.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #1a1a1a;
+            line-height: 1.6;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .header {
+            background: white;
+            color: #1a1a1a;
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 32px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .header-icon {
+            font-size: 3em;
+            color: #8b5cf6;
+            margin-bottom: 16px;
+        }
+        
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            color: #64748b;
+            margin-bottom: 24px;
+            font-weight: 400;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #10b981;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        
+        .card h2 {
+            color: #1a1a1a;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .card-icon {
+            font-size: 1.2em;
+            color: #8b5cf6;
+        }
+        
+        .metric {
+            font-size: 2em;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        
+        .metric-label {
+            color: #64748b;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        /* File Management Section */
+        .file-management {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+        
+        .file-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .file-header h2 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .file-content {
+            padding: 30px;
+        }
+        
+        .upload-panel {
+            background: var(--gray-50);
+            border: 3px dashed var(--gray-300);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+        
+        .upload-panel:hover {
+            border-color: var(--primary);
+            background: var(--gray-100);
+        }
+        
+
+        
+        .upload-icon {
+            font-size: 4em;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        .upload-text {
+            font-size: 1.2em;
+            color: var(--gray-600);
+            margin-bottom: 10px;
+        }
+        
+        .upload-subtext {
+            font-size: 0.9em;
+            color: var(--gray-500);
+            margin-bottom: 20px;
+        }
+        
+        .upload-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Library Section */
+        .library-section {
+            margin-top: 30px;
+        }
+        
+        .library-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .library-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--gray-800);
+        }
+        
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .library-item {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .library-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+        
+        .library-item-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .library-item-icon {
+            font-size: 1.5em;
+        }
+        
+        .library-item-title {
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+        
+        .library-item-meta {
+            font-size: 0.9em;
+            color: var(--gray-500);
+            margin-bottom: 15px;
+        }
+        
+        .library-item-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Modal Styles */
+        .delete-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .delete-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .delete-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .delete-modal-header h3 {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: var(--gray-500);
+        }
+        
+        .delete-modal-body {
+            margin-bottom: 25px;
+        }
+        
+        .delete-modal-body p {
+            margin-bottom: 15px;
+            color: var(--gray-700);
+        }
+        
+        .delete-modal-body ul {
+            margin-left: 20px;
+            color: var(--gray-600);
+        }
+        
+        .delete-modal-body li {
+            margin-bottom: 8px;
+        }
+        
+        .delete-modal-footer {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+        
+        .btn-cancel {
+            background: var(--gray-300);
+            color: var(--gray-700);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .btn-delete {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        /* Notification Styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            z-index: 1001;
+            max-width: 400px;
+            border-left: 4px solid var(--success);
+        }
+        
+        .notification-error {
+            border-left-color: var(--error);
+        }
+        
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .notification-icon {
+            font-size: 1.2em;
+        }
+        
+        .notification-message {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            color: var(--gray-500);
+        }
+        
+        /* Performance Tiers Section */
+        .performance-tiers {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+        
+        .tiers-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .tiers-header h2 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .tiers-header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .tiers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        .tier-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .tier-card.current {
+            border-color: #10b981;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+        
+        .tier-badge {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .tier-card h3 {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 15px;
+        }
+        
+        .tier-specs {
+            display: grid;
+            gap: 8px;
+        }
+        
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .spec-item:last-child {
+            border-bottom: none;
+        }
+        
+        .spec-label {
+            font-weight: 600;
+            color: #64748b;
+        }
+        
+        .spec-value {
+            color: #1a1a1a;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        
+        /* Quick Actions Section */
+        .quick-actions {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+        
+        .actions-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .actions-header h2 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .actions-header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        .action-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .action-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .action-card i {
+            font-size: 2em;
+            color: #3b82f6;
+        }
+        
+        .action-card span {
+            font-weight: 600;
+            color: #1a1a1a;
+            text-align: center;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .library-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tiers-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-icon">🔍</div>
+            <h1>Enterprise RAG System</h1>
+            <p>Universal Dashboard - System Monitoring & File Management</p>
+            <div class="status-indicator">
+                <i class="fas fa-circle"></i>
+                System Online
+            </div>
+        </div>
+        
+        <!-- System Monitoring Cards -->
+        <div class="main-grid">
+            <div class="card">
+                <h2><i class="fas fa-server card-icon"></i>System Status</h2>
+                <div class="metric" id="current-tier">Loading...</div>
+                <div class="metric-label">Current Tier</div>
+                <div class="metric" id="active-model">Loading...</div>
+                <div class="metric-label">Active Model</div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-chart-line card-icon"></i>Performance</h2>
+                <div class="metric" id="cpu-usage">Loading...</div>
+                <div class="metric-label">CPU Usage</div>
+                <div class="metric" id="memory-usage">Loading...</div>
+                <div class="metric-label">Memory Usage</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="response-time-bar" style="width: 0%"></div>
+                </div>
+                <div class="metric-label">Response Time</div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-brain card-icon"></i>AI Models</h2>
+                <div class="metric" id="available-models">Loading...</div>
+                <div class="metric-label">Available Models</div>
+                <div class="metric" id="total-size">Loading...</div>
+                <div class="metric-label">Total Size</div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-microchip card-icon"></i>Resource Usage</h2>
+                <div class="metric" id="cpu-percent">Loading...</div>
+                <div class="metric-label">CPU Usage</div>
+                <div class="metric" id="memory-percent">Loading...</div>
+                <div class="metric-label">Memory Usage</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="resource-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Tiers Section -->
+        <div class="performance-tiers">
+            <div class="tiers-header">
+                <h2><i class="fas fa-layer-group"></i> Performance Tiers</h2>
+                <p>Choose the optimal configuration for your system</p>
+            </div>
+            <div class="tiers-grid">
+                <div class="tier-card current">
+                    <div class="tier-badge">Current</div>
+                    <h3>Low Tier</h3>
+                    <div class="tier-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Model:</span>
+                            <span class="spec-value">tinyllama-1.1b-chat-v0.3.Q4_K_M.gguf</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Threads:</span>
+                            <span class="spec-value">2</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Context:</span>
+                            <span class="spec-value">512</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Tokens:</span>
+                            <span class="spec-value">32</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tier-card">
+                    <h3>Medium Tier</h3>
+                    <div class="tier-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Model:</span>
+                            <span class="spec-value">qwen2.5-3b-instruct-q4_k_m.gguf</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Threads:</span>
+                            <span class="spec-value">4</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Context:</span>
+                            <span class="spec-value">1024</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Tokens:</span>
+                            <span class="spec-value">64</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tier-card">
+                    <h3>High Tier</h3>
+                    <div class="tier-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Model:</span>
+                            <span class="spec-value">qwen2-7b-instruct-q4_k_m.gguf</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Threads:</span>
+                            <span class="spec-value">8</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Context:</span>
+                            <span class="spec-value">2048</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Tokens:</span>
+                            <span class="spec-value">128</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions Section -->
+        <div class="quick-actions">
+            <div class="actions-header">
+                <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+                <p>Common tasks and system operations</p>
+            </div>
+            <div class="actions-grid">
+                <button class="action-card" onclick="dashboard.downloadCurrentModel()">
+                    <i class="fas fa-download"></i>
+                    <span>Download Current Model</span>
+                </button>
+                <button class="action-card" onclick="dashboard.testSystem()">
+                    <i class="fas fa-vial"></i>
+                    <span>Test System</span>
+                </button>
+                <button class="action-card" onclick="window.open('/documentation', '_blank')">
+                    <i class="fas fa-book"></i>
+                    <span>Documentation</span>
+                </button>
+                <button class="action-card" onclick="dashboard.showAdvancedSettings()">
+                    <i class="fas fa-cog"></i>
+                    <span>Advanced Settings</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- File Management Section -->
+        <div class="file-management">
+            <div class="file-header">
+                <h2>📁 File Management</h2>
+                <p>Upload, process, and manage your documents</p>
+            </div>
+            
+            <div class="file-content">
+                <!-- Enhanced Upload Link -->
+                <div class="upload-panel" id="uploadPanel">
+                    <div class="upload-icon">🚀</div>
+                    <div class="upload-text">Use Enhanced Upload for automatic processing</div>
+                    <div class="upload-subtext">Advanced upload with TUS resumable uploads and automatic processing</div>
+                    <button class="upload-btn" onclick="window.location.href='/enhanced-upload'">Go to Enhanced Upload</button>
+                </div>
+                
+                <!-- Library Section -->
+                <div class="library-section">
+                    <div class="library-header">
+                        <h3 class="library-title">📚 Document Library</h3>
+                        <button class="upload-btn" onclick="dashboard.loadLibrary()">Refresh</button>
+                    </div>
+                    <div class="library-grid" id="libraryGrid">
+                        <div style="text-align: center; color: var(--gray-500); padding: 40px;">
+                            No files uploaded yet. Upload your first document to get started!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        class UniversalDashboard {
+            constructor() {
+                this.library = [];
+                this.stats = {
+                    totalFiles: 0,
+                    processedFiles: 0,
+                    totalChunks: 0,
+                    totalVectors: 0
+                };
+                
+                this.init();
+            }
+            
+            async init() {
+                this.setupEventListeners();
+                await this.loadSystemStatus();
+                await this.loadLibrary();
+                this.startPeriodicUpdates();
+            }
+            
+            setupEventListeners() {
+                // Enhanced upload panel hover effect
+                const uploadPanel = document.getElementById('uploadPanel');
+                
+                uploadPanel.addEventListener('mouseenter', () => {
+                    uploadPanel.style.transform = 'scale(1.02)';
+                    uploadPanel.style.background = '#eff6ff';
+                });
+                
+                uploadPanel.addEventListener('mouseleave', () => {
+                    uploadPanel.style.transform = 'scale(1)';
+                    uploadPanel.style.background = 'var(--gray-100)';
+                });
+            }
+            
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            getFileIcon(fileType) {
+                const icons = {
+                    'doc': '📄',
+                    'document': '📄',
+                    'image': '🖼️',
+                    'audio': '🔊',
+                    'video': '🎥',
+                    'unknown': '❓'
+                };
+                return icons[fileType] || '📄';
+            }
+            
+
+            
+
+            
+
+            
+            async loadSystemStatus() {
+                try {
+                    const [statusResponse, statsResponse] = await Promise.all([
+                        fetch('/dashboard/status'),
+                        fetch('/dashboard/stats')
+                    ]);
+                    
+                    if (statusResponse.ok) {
+                        const status = await statusResponse.json();
+                        this.updateSystemStatus(status);
+                    }
+                    
+                    if (statsResponse.ok) {
+                        const stats = await statsResponse.json();
+                        this.updateSystemStats(stats);
+                    }
+                } catch (error) {
+                    console.error('Error loading system status:', error);
+                }
+            }
+            
+            updateSystemStatus(status) {
+                document.getElementById('current-tier').textContent = status.tier || 'Unknown';
+                document.getElementById('active-model').textContent = status.model || 'Unknown';
+            }
+            
+            updateSystemStats(stats) {
+                document.getElementById('cpu-usage').textContent = `${stats.cpu_usage || 0}%`;
+                document.getElementById('memory-usage').textContent = `${stats.memory_usage || 0}%`;
+                document.getElementById('available-models').textContent = stats.available_models || 0;
+                document.getElementById('total-size').textContent = stats.total_size || '0 GB';
+                
+                // Update progress bars
+                const cpuPercent = stats.cpu_usage || 0;
+                const memoryPercent = stats.memory_usage || 0;
+                
+                document.getElementById('cpu-percent').textContent = `${cpuPercent}%`;
+                document.getElementById('memory-percent').textContent = `${memoryPercent}%`;
+                
+                document.getElementById('resource-bar').style.width = `${Math.max(cpuPercent, memoryPercent)}%`;
+                document.getElementById('response-time-bar').style.width = `${Math.min(cpuPercent * 2, 100)}%`;
+            }
+            
+            async loadLibrary() {
+                try {
+                    console.log('Loading library...');
+                    const response = await fetch('/dashboard/files');
+                    if (response.ok) {
+                        const files = await response.json();
+                        console.log('Files loaded:', files);
+                        this.library = files || [];
+                        this.updateLibrary();
+                    } else {
+                        console.error('Failed to load files:', response.status);
+                    }
+                } catch (error) {
+                    console.error('Error loading library:', error);
+                }
+            }
+            
+            updateLibrary() {
+                const libraryGrid = document.getElementById('libraryGrid');
+                console.log('Updating library with', this.library.length, 'files');
+                
+                if (this.library.length === 0) {
+                    console.log('No files to display');
+                    libraryGrid.innerHTML = `
+                        <div style="text-align: center; color: var(--gray-500); padding: 40px;">
+                            No files uploaded yet. Upload your first document to get started!
+                        </div>
+                    `;
+                    return;
+                }
+                
+                libraryGrid.innerHTML = '';
+                
+                this.library.forEach((file, index) => {
+                    console.log('Creating library item for file:', file);
+                    const libraryItem = this.createLibraryItem(file);
+                    libraryGrid.appendChild(libraryItem);
+                });
+            }
+            
+            createLibraryItem(file) {
+                console.log('Creating library item for:', file);
+                const div = document.createElement('div');
+                div.className = 'library-item fade-in';
+                
+                const icon = this.getFileIcon(file.type || 'doc');
+                const size = this.formatFileSize(file.size || 0);
+                const date = new Date(file.upload_time || file.uploadTime).toLocaleDateString();
+                const fileName = file.name || file.filename || 'Unknown File';
+                
+                div.innerHTML = `
+                    <div class="library-item-header">
+                        <div class="library-item-icon ${file.type || 'doc'}">${icon}</div>
+                        <div class="library-item-title">${fileName}</div>
+                    </div>
+                    <div class="library-item-meta">${size} • ${date}</div>
+                    <div class="library-item-status">
+                        <span class="status-badge status-${file.status || 'completed'}">${file.status || 'Completed'}</span>
+                        <button class="action-btn btn-preview" onclick="dashboard.previewLibraryItem('${file.id}')">Preview</button>
+                        <button class="action-btn btn-delete" onclick="dashboard.deleteFile('${file.id}')">Delete</button>
+                    </div>
+                `;
+                
+                return div;
+            }
+            
+            async deleteFile(fileId) {
+                try {
+                    // Get deletion preview first
+                    const previewResponse = await fetch(`/dashboard/files/${fileId}/deletion-preview`);
+                    if (!previewResponse.ok) {
+                        throw new Error('Failed to get deletion preview');
+                    }
+                    
+                    const preview = await previewResponse.json();
+                    
+                    // Show confirmation dialog
+                    const confirmed = await this.showDeleteConfirmation(preview);
+                    if (!confirmed) {
+                        return;
+                    }
+                    
+                    // Perform deletion
+                    const response = await fetch(`/dashboard/files/${fileId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Deletion failed');
+                    }
+                    
+                    const result = await response.json();
+                    
+                    // Show success message
+                    this.showNotification('success', `File "${result.filename}" deleted successfully`);
+                    
+                    // Refresh the library
+                    this.loadLibrary();
+                    
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    this.showNotification('error', `Failed to delete file: ${error.message}`);
+                }
+            }
+            
+            async showDeleteConfirmation(preview) {
+                return new Promise((resolve) => {
+                    const modal = document.createElement('div');
+                    modal.className = 'delete-modal';
+                    modal.innerHTML = `
+                        <div class="delete-modal-content">
+                            <div class="delete-modal-header">
+                                <h3>🗑️ Confirm Deletion</h3>
+                                <button class="close-btn" onclick="this.closest('.delete-modal').remove(); resolve(false);">×</button>
+                            </div>
+                            <div class="delete-modal-body">
+                                <p><strong>Are you sure you want to delete "${preview.filename}"?</strong></p>
+                                <p>This action will permanently delete:</p>
+                                <ul>
+                                    <li>📁 File on disk (${this.formatFileSize(preview.deletion_preview.file_size_bytes)})</li>
+                                    <li>🧠 ${preview.deletion_preview.vectors_in_qdrant} vectors in database</li>
+                                    <li>📋 File metadata and processing history</li>
+                                </ul>
+                                <p><em>This action cannot be undone.</em></p>
+                            </div>
+                            <div class="delete-modal-footer">
+                                <button class="btn-cancel" onclick="this.closest('.delete-modal').remove(); resolve(false);">Cancel</button>
+                                <button class="btn-delete" onclick="this.closest('.delete-modal').remove(); resolve(true);">Delete Permanently</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(modal);
+                });
+            }
+            
+            showNotification(type, message) {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type === 'error' ? 'notification-error' : ''}`;
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        <span class="notification-icon">${type === 'success' ? '✅' : '❌'}</span>
+                        <span class="notification-message">${message}</span>
+                        <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                    </div>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+            
+
+            
+            previewLibraryItem(id) {
+                const item = this.library.find(item => item.id === id);
+                if (!item) return;
+                
+                this.showNotification('info', `Preview of ${item.name} - Type: ${item.type}, Size: ${this.formatFileSize(item.size)}`);
+            }
+            
+            startPeriodicUpdates() {
+                // Update system status every 30 seconds
+                setInterval(() => {
+                    this.loadSystemStatus();
+                }, 30000);
+                
+                // Update library every 60 seconds
+                setInterval(() => {
+                    this.loadLibrary();
+                }, 60000);
+            }
+            
+            // Quick Actions Functions
+            downloadCurrentModel() {
+                this.showNotification('info', 'Downloading current model...');
+                // Implementation would go here
+            }
+            
+            testSystem() {
+                this.showNotification('info', 'Running system tests...');
+                // Implementation would go here
+            }
+            
+            showAdvancedSettings() {
+                this.showNotification('info', 'Opening advanced settings...');
+                // Implementation would go here
+            }
+        }
+        
+        // Initialize dashboard
+        const dashboard = new UniversalDashboard();
+    </script>
+</body>
+</html> 
