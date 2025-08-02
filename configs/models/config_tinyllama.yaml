@@ -1,0 +1,68 @@
+# TinyLlama-1.1B Optimized Configuration
+# Fast and efficient for Mac deployment
+
+# Model Configuration - Using TinyLlama-1.1B
+model:
+  name: "tinyllama"  # Switch to TinyLlama for maximum speed
+  # Model-specific settings optimized for TinyLlama-1.1B
+  tinyllama:
+    filename: "tinyllama-1.1b-chat-v0.3.Q4_K_M.gguf"
+    context_size: 1024  # Smaller context for speed
+    threads: 8  # Optimized for Mac
+    batch_size: 256  # Smaller batch for memory efficiency
+    max_tokens: 128  # Shorter responses for speed
+  qwen2.5-3b:
+    filename: "qwen2.5-3b-instruct-q4_k_m.gguf"
+    context_size: 2048
+    threads: 12
+    batch_size: 512
+    max_tokens: 256
+  qwen2-7b:
+    filename: "qwen2-7b-instruct-q4_k_m.gguf"
+    context_size: 2048
+    threads: 12
+    batch_size: 512
+    max_tokens: 256
+
+# API Configuration - Fast timeouts for quick responses
+api:
+  host: "0.0.0.0"
+  port: 8000
+  timeout: 30  # Fast timeout for quick model
+  max_file_size: 50  # Smaller files for speed
+
+# Vector Store Configuration
+vector_store:
+  host: "qdrant"
+  port: 6334
+  collection_name: "enterprise_docs"
+  vector_size: 384
+
+# LLM Configuration - Optimized for TinyLlama-1.1B
+llm:
+  backend: "llama_cpp"
+  api_url: "http://llama-cpp:8080/completion"
+  temperature: 0.7  # Balanced for speed and quality
+  top_p: 0.9  # Optimized for TinyLlama
+  top_k: 40  # Balanced settings
+  repeat_penalty: 1.1  # Standard penalty
+
+# Processing Configuration - Optimized for speed
+processing:
+  chunk_size: 300  # Smaller chunks for faster processing
+  chunk_overlap: 30  # Reduced overlap for speed
+  max_workers: 4  # Conservative for Mac
+
+# Monitoring Configuration
+monitoring:
+  prometheus_port: 9090
+  grafana_port: 3000
+  grafana_password: "admin"
+
+# Deployment Configuration
+deployment:
+  platform: "auto"
+  restart_policy: "unless-stopped"
+  health_check_interval: 30
+  health_check_timeout: 10
+  health_check_retries: 3 
